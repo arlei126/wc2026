@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>世界盃 2026 出線智能計算器</title>
+<style>
+  :root{
+    --bg:#f4f6f8; --panel:#ffffff; --panel2:#eef1f5; --line:#dde3ea;
+    --txt:#1a2230; --mut:#64727f; --acc:#188a3c; --acc2:#1f6feb;
+    --gold:#a9790a; --red:#d23b3b; --blue:#1f6feb; --green:#188a3c;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+    font-family:"PingFang HK","Microsoft JhengHei","Segoe UI",system-ui,sans-serif;
+    font-size:15px;line-height:1.5}
+  header{padding:18px 16px 12px;border-bottom:1px solid var(--line);
+    position:sticky;top:0;background:var(--bg);z-index:20}
+  h1{margin:0;font-size:20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .sub{color:var(--mut);font-size:12.5px;margin-top:4px}
+  .tabs{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+  .tab{padding:7px 14px;border-radius:18px;background:var(--panel);border:1px solid var(--line);
+    cursor:pointer;font-size:13.5px;color:var(--mut);user-select:none}
+  .tab.on{background:var(--acc2);border-color:var(--acc2);color:#fff;font-weight:600}
+  .bar{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center}
+  button.act{background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+    padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12.5px}
+  button.act:hover{border-color:var(--acc2)}
+  button.act.prim{background:var(--acc2);border-color:var(--acc2);color:#fff;font-weight:700}
+  button.act.prim:hover{filter:brightness(1.08)}
+  main{padding:14px 16px 60px;max-width:1180px;margin:0 auto}
+  .view{display:none}.view.on{display:block}
+  /* group grid */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+  .gcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .ghead{padding:9px 12px;background:var(--panel2);font-weight:700;display:flex;
+    justify-content:space-between;align-items:center;font-size:14px;cursor:pointer}
+  .ghead .gl{color:var(--acc2)}
+  table{width:100%;border-collapse:collapse}
+  .stand{table-layout:fixed;width:100%}
+  .stand th,.stand td{padding:4px 1px;font-size:12px;text-align:center;overflow:hidden}
+  .stand th{color:var(--mut);font-weight:500;border-bottom:1px solid var(--line)}
+  .stand .cpos{width:16px;color:var(--mut)}
+  .stand th.tn,.stand td.tn{width:34%;text-align:left;white-space:nowrap;text-overflow:ellipsis;padding-left:2px}
+  .stand tr.p1{background:rgba(46,160,67,.13)}
+  .stand tr.p2{background:rgba(47,109,176,.13)}
+  .stand tr.p3{background:rgba(212,167,44,.10)}
+  .pts{font-weight:700;color:var(--txt)}
+  .chips{display:flex;flex-wrap:wrap;gap:5px;padding:7px 10px 2px}
+  .schip{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;
+    padding:2px 8px;border-radius:11px;line-height:1.6}
+  .schip .flag{width:18px;height:12px}
+  .fixt{padding:8px 12px 12px}
+  .md{color:var(--mut);font-size:11px;margin:8px 0 4px;letter-spacing:.5px}
+  .mrow{display:flex;align-items:center;gap:6px;padding:3px 0}
+  .mrow .h{flex:1;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mrow .a{flex:1;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mrow input{width:34px;text-align:center;background:var(--bg);border:1px solid var(--line);
+    color:var(--txt);border-radius:6px;padding:4px 0;font-size:13px}
+  .mrow input:focus{outline:none;border-color:var(--acc2)}
+  .vs{color:var(--mut);font-size:11px}
+  .badge{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;font-weight:600;margin-left:4px}
+  .b-q{background:#dcf3e3;color:#157a35;border:1px solid #b6e3c4}
+  .b-w{background:#dbeafe;color:#1a56c4;border:1px solid #b6d2f7}
+  .b-out{background:#fbe0e0;color:#bb3030;border:1px solid #f2c4c4}
+  .b-live{background:#efe6fb;color:#7c4dd0;border:1px solid #ddccf3}
+  .hint{font-size:11.5px;color:var(--mut);padding:2px 12px 8px;line-height:1.45}
+  .hint b{color:var(--acc)}
+  details.scen{margin:0 10px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel2)}
+  details.scen summary{cursor:pointer;font-size:12px;font-weight:600;color:var(--acc2);padding:7px 10px;list-style:none}
+  details.scen summary::-webkit-details-marker{display:none}
+  details.scen summary::before{content:"▸ ";color:var(--mut)}
+  details.scen[open] summary::before{content:"▾ "}
+  .scbox{padding:2px 10px 9px;max-height:280px;overflow:auto}
+  .srow{font-size:11.5px;padding:4px 0;border-bottom:1px dashed var(--line);line-height:1.5}
+  .srow:last-child{border-bottom:none}
+  .srow .cond{color:var(--mut)}
+  .srow .qg{color:var(--acc)}
+  .srow .gd{color:var(--gold)}
+  .scnote{font-size:11.5px;color:var(--mut);line-height:1.5;padding:4px 0}
+  /* third table */
+  .wrap{overflow-x:auto}
+  .big{width:100%;border-collapse:collapse;min-width:560px}
+  .big th,.big td{padding:8px 10px;font-size:13px;border-bottom:1px solid var(--line);text-align:center}
+  .big th{color:var(--mut);font-weight:500;position:sticky;top:0;background:var(--panel)}
+  .big td.l{text-align:left}
+  .big tr.in{background:rgba(46,160,67,.12)}
+  .big tr.in td:first-child{border-left:3px solid var(--acc)}
+  .big tr.cut td{color:var(--mut)}
+  .cutline td{padding:0;height:0}
+  .cutline div{border-top:2px dashed var(--red);margin:3px 0;position:relative}
+  .cutline span{position:absolute;right:8px;top:-9px;background:var(--bg);color:var(--red);
+    font-size:11px;padding:0 6px}
+  /* overview */
+  .ov{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px}
+  .ovc{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px}
+  .ovc h4{margin:0 0 6px;font-size:13px;color:var(--acc2)}
+  .ovrow{display:flex;justify-content:space-between;font-size:12.5px;padding:2px 0}
+  .ovrow .r{color:var(--mut)}
+  .note{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--acc2);
+    border-radius:8px;padding:11px 13px;font-size:12.5px;color:var(--mut);margin-bottom:14px}
+  .note b{color:var(--txt)}
+  .flag{display:inline-block;width:21px;height:14px;object-fit:cover;border-radius:2px;
+    margin-right:5px;vertical-align:-2px;box-shadow:0 0 0 1px rgba(0,0,0,.10)}
+  details.rules{margin-top:10px}
+  details.rules summary{cursor:pointer;color:var(--acc2);font-size:13px}
+  details.rules div{font-size:12.5px;color:var(--mut);padding:8px 4px;line-height:1.6}
+  .empty{color:var(--mut);font-size:13px;padding:30px;text-align:center}
+  /* 32強走線 */
+  .bracket-scroll{overflow-x:auto;padding:4px 2px 12px}
+  .bracket{display:flex;gap:16px;min-width:940px}
+  .rnd{display:flex;flex-direction:column;justify-content:space-around;gap:10px;min-width:148px;flex:1}
+  .rndh{font-size:12.5px;font-weight:700;color:var(--acc2);text-align:center;padding:4px 0;
+    border-bottom:2px solid var(--line);margin-bottom:4px}
+  .kmatch{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px;position:relative}
+  .kmno{position:absolute;top:-7px;left:7px;background:var(--bg);font-size:9px;color:var(--mut);padding:0 4px}
+  .kteam{display:flex;align-items:center;gap:5px;padding:6px;font-size:12.5px;border-radius:5px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .kteam+.kteam{border-top:1px dashed var(--line)}
+  .kteam[data-pick]{cursor:pointer}
+  .kteam[data-pick]:hover{background:var(--panel2)}
+  .kteam.sel{background:rgba(24,138,60,.14);font-weight:700}
+  .kteam.dim{opacity:.4}
+  .kteam .slot{color:var(--mut);font-size:11px}
+  .kteam .flag{flex-shrink:0}
+</style>
+</head>
+<body>
+<header>
+  <h1>⚽ 世界盃 2026 出線智能計算器 <span class="badge b-live">48 隊・12 組</span></h1>
+  <div class="sub">輸入每場比分，自動計小組排名（對賽成績優先）、最佳第 3 名、同每隊出線情境。賽果會自動存喺你部機。</div>
+  <div class="tabs">
+    <div class="tab on" data-v="groups">分組賽果 / 排名</div>
+    <div class="tab" data-v="third">最佳第 3 名</div>
+    <div class="tab" data-v="overview">出線總表</div>
+    <div class="tab" data-v="bracket">32強走線</div>
+  </div>
+  <div class="bar">
+    <button class="act prim" id="auto">⚡ 自動更新官方賽果</button>
+    <button class="act" id="demo">填入示範賽果</button>
+    <button class="act" id="reset">清空全部</button>
+    <span class="sub" id="autost"></span>
+    <span class="sub" id="saved"></span>
+  </div>
+  <details class="rules"><summary>📖 今屆出線規則（按一下睇）</summary>
+  <div>
+    <b style="color:var(--txt)">出線辦法：</b>每組首 2 名直接出線；12 個小組第 3 名之中，最好成績嘅 8 隊一齊晉級 32 強。<br><br>
+    <b style="color:var(--txt)">小組內同分排序（今屆改咗，對賽優先）：</b>
+    ① 對賽球隊之間嘅得分 → ② 之間嘅得失球 → ③ 之間嘅入球 →（若仍同分，只就仍未分出嘅球隊重新計①②③）→ ④ 全部賽事總得失球 → ⑤ 總入球 → ⑥ 紀律分（黃／紅牌）→ ⑦ FIFA 排名。<br><br>
+    <b style="color:var(--txt)">最佳第 3 名排序（跨組，冇對賽比較）：</b>① 總得分 → ② 總得失球 → ③ 總入球 → ④ 紀律分 → ⑤ FIFA 排名。<br><br>
+    <i>註：本程式自動計到①至⑤／①至③；紀律分同 FIFA 排名（最後分序）以約數作後備，極少觸發，會以「≈」標示。</i>
+  </div>
+  </details>
+</header>
+
+<main>
+  <section class="view on" id="v-groups"><div class="grid" id="groups"></div></section>
+  <section class="view" id="v-third">
+    <div class="note">下表將 12 個小組第 3 名排晒一齊，<b>頭 8 名（綠色）出線</b>，紅色虛線以下 4 隊淘汰。要全部小組賽行晒先準。</div>
+    <div class="wrap"><table class="big" id="thirdTbl"></table></div>
+  </section>
+  <section class="view" id="v-overview">
+    <div class="note"><b>出線總表</b>：每組首 2 名 ＋ 8 隊最佳第 3 名 ＝ 32 隊晉級。未踢完嘅以目前賽果即時推算（會跟住你輸入更新）。</div>
+    <div class="ov" id="overview"></div>
+  </section>
+  <section class="view" id="v-bracket">
+    <div class="note"><b>32 強走線</b>：每組首名／次名 ＋ 8 個最佳第 3 名，按 FIFA 官方 <b>Annex C（495 種組合）</b>自動配對。<b>撳隊名</b>就可以揀贏方，一路帶去決賽睇走線。小組賽未踢完前係臨時推算（會跟賽果更新）。</div>
+    <div class="bracket-scroll"><div class="bracket" id="bracket"></div></div>
+  </section>
+</main>
+
+<script>
+/* ===== 隊伍資料 ===== */
+const T = {
+  MEX:{zh:"墨西哥",iso:"mx",r:12}, RSA:{zh:"南非",iso:"za",r:56}, KOR:{zh:"韓國",iso:"kr",r:23}, CZE:{zh:"捷克",iso:"cz",r:42},
+  CAN:{zh:"加拿大",iso:"ca",r:26}, BIH:{zh:"波斯尼亞",iso:"ba",r:64}, QAT:{zh:"卡塔爾",iso:"qa",r:51}, SUI:{zh:"瑞士",iso:"ch",r:16},
+  BRA:{zh:"巴西",iso:"br",r:5}, MAR:{zh:"摩洛哥",iso:"ma",r:11}, HAI:{zh:"海地",iso:"ht",r:83}, SCO:{zh:"蘇格蘭",iso:"gb-sct",r:35},
+  USA:{zh:"美國",iso:"us",r:15}, PAR:{zh:"巴拉圭",iso:"py",r:38}, AUS:{zh:"澳洲",iso:"au",r:25}, TUR:{zh:"土耳其",iso:"tr",r:27},
+  GER:{zh:"德國",iso:"de",r:9}, CUW:{zh:"庫拉索",iso:"cw",r:90}, CIV:{zh:"科特迪瓦",iso:"ci",r:40}, ECU:{zh:"厄瓜多爾",iso:"ec",r:24},
+  NED:{zh:"荷蘭",iso:"nl",r:6}, JPN:{zh:"日本",iso:"jp",r:17}, SWE:{zh:"瑞典",iso:"se",r:34}, TUN:{zh:"突尼西亞",iso:"tn",r:41},
+  BEL:{zh:"比利時",iso:"be",r:8}, EGY:{zh:"埃及",iso:"eg",r:32}, IRN:{zh:"伊朗",iso:"ir",r:19}, NZL:{zh:"紐西蘭",iso:"nz",r:86},
+  ESP:{zh:"西班牙",iso:"es",r:2}, CPV:{zh:"佛得角",iso:"cv",r:70}, KSA:{zh:"沙特阿拉伯",iso:"sa",r:60}, URU:{zh:"烏拉圭",iso:"uy",r:14},
+  FRA:{zh:"法國",iso:"fr",r:3}, SEN:{zh:"塞內加爾",iso:"sn",r:18}, IRQ:{zh:"伊拉克",iso:"iq",r:58}, NOR:{zh:"挪威",iso:"no",r:30},
+  ARG:{zh:"阿根廷",iso:"ar",r:1}, ALG:{zh:"阿爾及利亞",iso:"dz",r:33}, AUT:{zh:"奧地利",iso:"at",r:22}, JOR:{zh:"約旦",iso:"jo",r:62},
+  POR:{zh:"葡萄牙",iso:"pt",r:7}, COD:{zh:"剛果民主",iso:"cd",r:55}, UZB:{zh:"烏茲別克",iso:"uz",r:50}, COL:{zh:"哥倫比亞",iso:"co",r:13},
+  ENG:{zh:"英格蘭",iso:"gb-eng",r:4}, CRO:{zh:"克羅地亞",iso:"hr",r:10}, GHA:{zh:"加納",iso:"gh",r:72}, PAN:{zh:"巴拿馬",iso:"pa",r:31}
+};
+/* 每組 4 隊（位置 1-4） */
+const GROUPS = {
+  A:["MEX","RSA","KOR","CZE"], B:["CAN","BIH","QAT","SUI"], C:["BRA","MAR","HAI","SCO"],
+  D:["USA","PAR","AUS","TUR"], E:["GER","CUW","CIV","ECU"], F:["NED","JPN","SWE","TUN"],
+  G:["BEL","EGY","IRN","NZL"], H:["ESP","CPV","KSA","URU"], I:["FRA","SEN","IRQ","NOR"],
+  J:["ARG","ALG","AUT","JOR"], K:["POR","COD","UZB","COL"], L:["ENG","CRO","GHA","PAN"]
+};
+/* 賽程模式（位置索引）：MD1 0v1,2v3 ; MD2 0v2,3v1 ; MD3 3v0,1v2 */
+const FIX = [ [0,1],[2,3], [0,2],[3,1], [3,0],[1,2] ];
+const MDNAME = ["第 1 輪","第 1 輪","第 2 輪","第 2 輪","第 3 輪","第 3 輪"];
+
+/* ===== 賽果儲存 ===== */
+let R = {};
+try{ R = JSON.parse(localStorage.getItem("wc26")||"{}"); }catch(e){ R={}; }
+function save(){ try{ localStorage.setItem("wc26",JSON.stringify(R)); markSaved(); }catch(e){} }
+function markSaved(){ const n=Object.keys(R).filter(k=>R[k]&&R[k].h!==""&&R[k].a!=="").length;
+  document.getElementById("saved").textContent = n? ("已輸入 "+n+" 場・自動儲存"):"" ; }
+function mid(g,i){ return g+i; }
+function getR(g,i){ const m=R[mid(g,i)]; return m||{h:"",a:""}; }
+function setR(g,i,side,val){ const k=mid(g,i); if(!R[k])R[k]={h:"",a:""};
+  R[k][side]= val===""?"":Math.max(0,parseInt(val,10)||0); save(); render(); }
+
+/* ===== 排名核心 ===== */
+function blankStat(code){ return {code,P:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,Pts:0}; }
+function groupMatches(g){ // 已踢嘅場 [{h,a,hg,ag}]
+  const codes=GROUPS[g], out=[];
+  for(let i=0;i<6;i++){ const r=getR(g,i); if(r.h!==""&&r.a!==""){
+    out.push({h:codes[FIX[i][0]],a:codes[FIX[i][1]],hg:+r.h,ag:+r.a}); } }
+  return out;
+}
+function buildStats(g){
+  const codes=GROUPS[g], st={}; codes.forEach(c=>st[c]=blankStat(c));
+  groupMatches(g).forEach(m=>{
+    const H=st[m.h],A=st[m.a]; H.P++;A.P++; H.GF+=m.hg;H.GA+=m.ag;A.GF+=m.ag;A.GA+=m.hg;
+    if(m.hg>m.ag){H.W++;A.L++;H.Pts+=3;} else if(m.hg<m.ag){A.W++;H.L++;A.Pts+=3;}
+    else {H.D++;A.D++;H.Pts++;A.Pts++;}
+  });
+  codes.forEach(c=>{st[c].GD=st[c].GF-st[c].GA;});
+  return st;
+}
+/* 對賽 mini 表 */
+function miniStats(set, matches){
+  const m={}; set.forEach(c=>m[c]={pts:0,gd:0,gf:0});
+  matches.forEach(g=>{ if(set.includes(g.h)&&set.includes(g.a)){
+    m[g.h].gf+=g.hg; m[g.a].gf+=g.ag; m[g.h].gd+=g.hg-g.ag; m[g.a].gd+=g.ag-g.hg;
+    if(g.hg>g.ag)m[g.h].pts+=3; else if(g.hg<g.ag)m[g.a].pts+=3; else {m[g.h].pts++;m[g.a].pts++;}
+  }});
+  return m;
+}
+/* 遞迴拆同分（FIFA 對賽優先） */
+function breakTie(tied, st, matches){
+  if(tied.length===1) return tied.slice();
+  const mini=miniStats(tied, matches);
+  const arr=tied.slice().sort((x,y)=>
+    mini[y].pts-mini[x].pts || mini[y].gd-mini[x].gd || mini[y].gf-mini[x].gf );
+  // 分 run
+  const runs=[]; let cur=[arr[0]];
+  for(let i=1;i<arr.length;i++){ const a=arr[i-1],b=arr[i];
+    if(mini[a].pts===mini[b].pts&&mini[a].gd===mini[b].gd&&mini[a].gf===mini[b].gf) cur.push(b);
+    else { runs.push(cur); cur=[b]; } }
+  runs.push(cur);
+  let out=[];
+  runs.forEach(run=>{
+    if(run.length===1) out.push(run[0]);
+    else if(run.length===tied.length) out=out.concat(overallSort(run, st)); // 冇分到 → 總成績
+    else out=out.concat(breakTie(run, st, matches)); // 仲有同分 → 重新計對賽
+  });
+  return out;
+}
+function overallSort(set, st){
+  return set.slice().sort((x,y)=>
+    st[y].GD-st[x].GD || st[y].GF-st[x].GF || T[x].r-T[y].r );
+}
+function rankGroup(g){
+  const st=buildStats(g), matches=groupMatches(g);
+  const codes=GROUPS[g].slice().sort((x,y)=>st[y].Pts-st[x].Pts);
+  // 按分數分 run
+  const runs=[]; let cur=[codes[0]];
+  for(let i=1;i<codes.length;i++){ if(st[codes[i]].Pts===st[codes[i-1]].Pts) cur.push(codes[i]);
+    else { runs.push(cur); cur=[codes[i]]; } }
+  runs.push(cur);
+  let order=[];
+  runs.forEach(run=> order = order.concat(run.length===1?run:breakTie(run, st, matches)) );
+  return {order, st, played:matches.length};
+}
+
+/* ===== 出線情境：精確窮舉每個比賽結果 =====
+   原理：列舉所有「餘下比賽 勝/和/負」組合（3^N）。每個組合用『得分 → 對賽得分』
+   判前後（呢兩級淨係靠勝/和/負就計到，唔使知比數）。若得分同對賽得分都打平，
+   就要睇實際得失球先分到，會標示「視得失球」。 */
+function outcomesAll(g, combo){ // 全 6 場結果（已踢用實際，餘下用 combo）
+  const codes=GROUPS[g], out=[];
+  for(let i=0;i<6;i++){ const r=getR(g,i); let res=null;
+    if(r.h!==""&&r.a!=="") res = (+r.h>+r.a)?'H':((+r.h<+r.a)?'A':'D');
+    else if(combo && combo[i]) res=combo[i];
+    if(res) out.push({i, h:codes[FIX[i][0]], a:codes[FIX[i][1]], res});
+  } return out;
+}
+function ptsOf(codes,outs){ const p={}; codes.forEach(c=>p[c]=0);
+  outs.forEach(o=>{ if(o.res==='H')p[o.h]+=3; else if(o.res==='A')p[o.a]+=3; else {p[o.h]++;p[o.a]++;} }); return p; }
+function hthOf(set,outs){ const p={}; set.forEach(c=>p[c]=0);
+  outs.forEach(o=>{ if(set.indexOf(o.h)>=0&&set.indexOf(o.a)>=0){
+    if(o.res==='H')p[o.h]+=3; else if(o.res==='A')p[o.a]+=3; else {p[o.h]++;p[o.a]++;} }}); return p; }
+function blocksOf(codes,outs){ // 排好序嘅 block；gdDep=true 即仍要睇得失球先分到
+  const pts=ptsOf(codes,outs);
+  const arr=codes.slice().sort((a,b)=>pts[b]-pts[a]);
+  const blocks=[]; let i=0;
+  while(i<arr.length){ let j=i; while(j+1<arr.length&&pts[arr[j+1]]===pts[arr[i]])j++;
+    const tie=arr.slice(i,j+1);
+    if(tie.length===1) blocks.push({codes:tie,gdDep:false});
+    else { const hp=hthOf(tie,outs); const sub=tie.slice().sort((a,b)=>hp[b]-hp[a]);
+      let k=0; while(k<sub.length){ let l=k; while(l+1<sub.length&&hp[sub[l+1]]===hp[sub[k]])l++;
+        const s2=sub.slice(k,l+1); blocks.push({codes:s2,gdDep:s2.length>1}); k=l+1; } }
+    i=j+1; }
+  return blocks;
+}
+function boundsOf(blocks,code){ let start=0;
+  for(const b of blocks){ if(b.codes.indexOf(code)>=0) return {best:start+1,worst:start+b.codes.length}; start+=b.codes.length; }
+  return {best:9,worst:9}; }
+function groupScenario(g){
+  const codes=GROUPS[g];
+  const rem=[]; for(let i=0;i<6;i++){ const r=getR(g,i); if(r.h===""||r.a==="") rem.push(i); }
+  const n=rem.length, total=Math.pow(3,n), RES=['H','D','A'];
+  const bnd={}; codes.forEach(c=>bnd[c]={maxWorst:0,minBest:9});
+  const rows=[];
+  for(let mask=0;mask<total;mask++){
+    const combo={}; let t=mask;
+    for(let k=0;k<n;k++){ combo[rem[k]]=RES[t%3]; t=(t/3|0); }
+    const outs=outcomesAll(g,combo);
+    const blocks=blocksOf(codes,outs);
+    codes.forEach(c=>{ const b=boundsOf(blocks,c);
+      if(b.worst>bnd[c].maxWorst)bnd[c].maxWorst=b.worst;
+      if(b.best<bnd[c].minBest)bnd[c].minBest=b.best; });
+    if(n>=1&&n<=3) rows.push({combo,blocks});
+  }
+  const status={};
+  codes.forEach(c=>{ const b=bnd[c]; let badge="",cls="";
+    if(n===0){ badge=""; cls=""; }
+    else if(b.maxWorst<=1){ badge="篤定首名"; cls="b-w"; }
+    else if(b.maxWorst<=2){ badge="已出線"; cls="b-q"; }
+    else if(b.minBest>=4){ badge="出局"; cls="b-out"; }
+    else if(b.minBest===3){ badge="只爭第3"; cls="b-live"; }
+    else { badge="出線未定"; cls="b-live"; }
+    status[c]={badge,cls}; });
+  return {rem,n,total,rows,status};
+}
+/* 把一個組合嘅 block 化成「出線兩隊 / 第3」 */
+function rowResult(blocks){
+  const flat=[]; blocks.forEach(b=>b.codes.forEach(c=>flat.push({c,b})));
+  const cutClean = flat[1].b!==flat[2].b;
+  if(cutClean) return {clean:true, q:[flat[0].c,flat[1].c], third:flat[2].c};
+  const blk=flat[1].b, above=[]; for(const b of blocks){ if(b===blk)break; b.codes.forEach(c=>above.push(c)); }
+  return {clean:false, sure:above, contest:blk.codes};
+}
+/* 把 combo 嘅每場結果寫成文字 */
+function comboText(g,combo){
+  const codes=GROUPS[g], parts=[];
+  Object.keys(combo).map(Number).sort((a,b)=>a-b).forEach(i=>{
+    const H=codes[FIX[i][0]], A=codes[FIX[i][1]], r=combo[i];
+    if(r==='H') parts.push(T[H].zh+' 勝 '+T[A].zh);
+    else if(r==='A') parts.push(T[A].zh+' 勝 '+T[H].zh);
+    else parts.push(T[H].zh+' 和 '+T[A].zh);
+  });
+  return parts.join('，');
+}
+
+/* ===== 32 強走線 (FIFA Annex C 官方 495 組合) ===== */
+const ANNEXC={"ABCDEFGH":"HGBCAFDE","ABCDEFGI":"CGBDAFEI","ABCDEFGJ":"CGBDAFEJ","ABCDEFGK":"CGBDAFEK","ABCDEFGL":"CGBDAFLE","ABCDEFHI":"HEBCAFDI","ABCDEFHJ":"HJBCAFDE","ABCDEFHK":"HEBCAFDK","ABCDEFHL":"HFBCADLE","ABCDEFIJ":"CJBDAFEI","ABCDEFIK":"CEBDAFIK","ABCDEFIL":"CEBDAFLI","ABCDEFJK":"CJBDAFEK","ABCDEFJL":"CJBDAFLE","ABCDEFKL":"CEBDAFLK","ABCDEGHI":"HGBCADEI","ABCDEGHJ":"HGBCADEJ","ABCDEGHK":"HGBCADEK","ABCDEGHL":"HGBCADLE","ABCDEGIJ":"EGBCADIJ","ABCDEGIK":"EGBCADIK","ABCDEGIL":"EGBCADLI","ABCDEGJK":"EGBCADJK","ABCDEGJL":"EGBCADLJ","ABCDEGKL":"EGBCADLK","ABCDEHIJ":"HJBCADEI","ABCDEHIK":"HEBCADIK","ABCDEHIL":"HEBCADLI","ABCDEHJK":"HJBCADEK","ABCDEHJL":"HJBCADLE","ABCDEHKL":"HEBCADLK","ABCDEIJK":"EJBCADIK","ABCDEIJL":"EJBCADLI","ABCDEIKL":"EIBCADLK","ABCDEJKL":"EJBCADLK","ABCDFGHI":"HGBCAFDI","ABCDFGHJ":"HGBCAFDJ","ABCDFGHK":"HGBCAFDK","ABCDFGHL":"CGBDAFLH","ABCDFGIJ":"CGBDAFIJ","ABCDFGIK":"CGBDAFIK","ABCDFGIL":"CGBDAFLI","ABCDFGJK":"CGBDAFJK","ABCDFGJL":"CGBDAFLJ","ABCDFGKL":"CGBDAFLK","ABCDFHIJ":"HJBCAFDI","ABCDFHIK":"HFBCADIK","ABCDFHIL":"HFBCADLI","ABCDFHJK":"HJBCAFDK","ABCDFHJL":"CJBDAFLH","ABCDFHKL":"HFBCADLK","ABCDFIJK":"CJBDAFIK","ABCDFIJL":"CJBDAFLI","ABCDFIKL":"CIBDAFLK","ABCDFJKL":"CJBDAFLK","ABCDGHIJ":"HGBCADIJ","ABCDGHIK":"HGBCADIK","ABCDGHIL":"HGBCADLI","ABCDGHJK":"HGBCADJK","ABCDGHJL":"HGBCADLJ","ABCDGHKL":"HGBCADLK","ABCDGIJK":"CJBDAGIK","ABCDGIJL":"CJBDAGLI","ABCDGIKL":"IGBCADLK","ABCDGJKL":"CJBDAGLK","ABCDHIJK":"HJBCADIK","ABCDHIJL":"HJBCADLI","ABCDHIKL":"HIBCADLK","ABCDHJKL":"HJBCADLK","ABCDIJKL":"IJBCADLK","ABCEFGHI":"HGBCAFEI","ABCEFGHJ":"HGBCAFEJ","ABCEFGHK":"HGBCAFEK","ABCEFGHL":"HGBCAFLE","ABCEFGIJ":"EGBCAFIJ","ABCEFGIK":"EGBCAFIK","ABCEFGIL":"EGBCAFLI","ABCEFGJK":"EGBCAFJK","ABCEFGJL":"EGBCAFLJ","ABCEFGKL":"EGBCAFLK","ABCEFHIJ":"HJBCAFEI","ABCEFHIK":"HEBCAFIK","ABCEFHIL":"HEBCAFLI","ABCEFHJK":"HJBCAFEK","ABCEFHJL":"HJBCAFLE","ABCEFHKL":"HEBCAFLK","ABCEFIJK":"EJBCAFIK","ABCEFIJL":"EJBCAFLI","ABCEFIKL":"EIBCAFLK","ABCEFJKL":"EJBCAFLK","ABCEGHIJ":"HJBCAGEI","ABCEGHIK":"EGBCAHIK","ABCEGHIL":"EGBCAHLI","ABCEGHJK":"HJBCAGEK","ABCEGHJL":"HJBCAGLE","ABCEGHKL":"EGBCAHLK","ABCEGIJK":"EJBCAGIK","ABCEGIJL":"EJBCAGLI","ABCEGIKL":"EGBAICLK","ABCEGJKL":"EJBCAGLK","ABCEHIJK":"EJBCAHIK","ABCEHIJL":"EJBCAHLI","ABCEHIKL":"EIBCAHLK","ABCEHJKL":"EJBCAHLK","ABCEIJKL":"EJBAICLK","ABCFGHIJ":"HGBCAFIJ","ABCFGHIK":"HGBCAFIK","ABCFGHIL":"HGBCAFLI","ABCFGHJK":"HGBCAFJK","ABCFGHJL":"HGBCAFLJ","ABCFGHKL":"HGBCAFLK","ABCFGIJK":"CJBFAGIK","ABCFGIJL":"CJBFAGLI","ABCFGIKL":"IGBCAFLK","ABCFGJKL":"CJBFAGLK","ABCFHIJK":"HJBCAFIK","ABCFHIJL":"HJBCAFLI","ABCFHIKL":"HIBCAFLK","ABCFHJKL":"HJBCAFLK","ABCFIJKL":"IJBCAFLK","ABCGHIJK":"HJBCAGIK","ABCGHIJL":"HJBCAGLI","ABCGHIKL":"IGBCAHLK","ABCGHJKL":"HJBCAGLK","ABCGIJKL":"IJBCAGLK","ABCHIJKL":"IJBCAHLK","ABDEFGHI":"HGBDAFEI","ABDEFGHJ":"HGBDAFEJ","ABDEFGHK":"HGBDAFEK","ABDEFGHL":"HGBDAFLE","ABDEFGIJ":"EGBDAFIJ","ABDEFGIK":"EGBDAFIK","ABDEFGIL":"EGBDAFLI","ABDEFGJK":"EGBDAFJK","ABDEFGJL":"EGBDAFLJ","ABDEFGKL":"EGBDAFLK","ABDEFHIJ":"HJBDAFEI","ABDEFHIK":"HEBDAFIK","ABDEFHIL":"HEBDAFLI","ABDEFHJK":"HJBDAFEK","ABDEFHJL":"HJBDAFLE","ABDEFHKL":"HEBDAFLK","ABDEFIJK":"EJBDAFIK","ABDEFIJL":"EJBDAFLI","ABDEFIKL":"EIBDAFLK","ABDEFJKL":"EJBDAFLK","ABDEGHIJ":"HJBDAGEI","ABDEGHIK":"EGBDAHIK","ABDEGHIL":"EGBDAHLI","ABDEGHJK":"HJBDAGEK","ABDEGHJL":"HJBDAGLE","ABDEGHKL":"EGBDAHLK","ABDEGIJK":"EJBDAGIK","ABDEGIJL":"EJBDAGLI","ABDEGIKL":"EGBAIDLK","ABDEGJKL":"EJBDAGLK","ABDEHIJK":"EJBDAHIK","ABDEHIJL":"EJBDAHLI","ABDEHIKL":"EIBDAHLK","ABDEHJKL":"EJBDAHLK","ABDEIJKL":"EJBAIDLK","ABDFGHIJ":"HGBDAFIJ","ABDFGHIK":"HGBDAFIK","ABDFGHIL":"HGBDAFLI","ABDFGHJK":"HGBDAFJK","ABDFGHJL":"HGBDAFLJ","ABDFGHKL":"HGBDAFLK","ABDFGIJK":"FJBDAGIK","ABDFGIJL":"FJBDAGLI","ABDFGIKL":"IGBDAFLK","ABDFGJKL":"FJBDAGLK","ABDFHIJK":"HJBDAFIK","ABDFHIJL":"HJBDAFLI","ABDFHIKL":"HIBDAFLK","ABDFHJKL":"HJBDAFLK","ABDFIJKL":"IJBDAFLK","ABDGHIJK":"HJBDAGIK","ABDGHIJL":"HJBDAGLI","ABDGHIKL":"IGBDAHLK","ABDGHJKL":"HJBDAGLK","ABDGIJKL":"IJBDAGLK","ABDHIJKL":"IJBDAHLK","ABEFGHIJ":"HJBFAGEI","ABEFGHIK":"EGBFAHIK","ABEFGHIL":"EGBFAHLI","ABEFGHJK":"HJBFAGEK","ABEFGHJL":"HJBFAGLE","ABEFGHKL":"EGBFAHLK","ABEFGIJK":"EJBFAGIK","ABEFGIJL":"EJBFAGLI","ABEFGIKL":"EGBAIFLK","ABEFGJKL":"EJBFAGLK","ABEFHIJK":"EJBFAHIK","ABEFHIJL":"EJBFAHLI","ABEFHIKL":"EIBFAHLK","ABEFHJKL":"EJBFAHLK","ABEFIJKL":"EJBAIFLK","ABEGHIJK":"EJBAHGIK","ABEGHIJL":"EJBAHGLI","ABEGHIKL":"EGBAIHLK","ABEGHJKL":"EJBAHGLK","ABEGIJKL":"EJBAIGLK","ABEHIJKL":"EJBAIHLK","ABFGHIJK":"HJBFAGIK","ABFGHIJL":"HJBFAGLI","ABFGHIKL":"HGBAIFLK","ABFGHJKL":"HJBFAGLK","ABFGIJKL":"IJBFAGLK","ABFHIJKL":"HJBAIFLK","ABGHIJKL":"HJBAIGLK","ACDEFGHI":"HGECAFDI","ACDEFGHJ":"HGJCAFDE","ACDEFGHK":"HGECAFDK","ACDEFGHL":"HGFCADLE","ACDEFGIJ":"CGJDAFEI","ACDEFGIK":"CGEDAFIK","ACDEFGIL":"CGEDAFLI","ACDEFGJK":"CGJDAFEK","ACDEFGJL":"CGJDAFLE","ACDEFGKL":"CGEDAFLK","ACDEFHIJ":"HJECAFDI","ACDEFHIK":"HEFCADIK","ACDEFHIL":"HEFCADLI","ACDEFHJK":"HJECAFDK","ACDEFHJL":"HJFCADLE","ACDEFHKL":"HEFCADLK","ACDEFIJK":"CJEDAFIK","ACDEFIJL":"CJEDAFLI","ACDEFIKL":"CEIDAFLK","ACDEFJKL":"CJEDAFLK","ACDEGHIJ":"HGJCADEI","ACDEGHIK":"HGECADIK","ACDEGHIL":"HGECADLI","ACDEGHJK":"HGJCADEK","ACDEGHJL":"HGJCADLE","ACDEGHKL":"HGECADLK","ACDEGIJK":"EGJCADIK","ACDEGIJL":"EGJCADLI","ACDEGIKL":"EGICADLK","ACDEGJKL":"EGJCADLK","ACDEHIJK":"HJECADIK","ACDEHIJL":"HJECADLI","ACDEHIKL":"HEICADLK","ACDEHJKL":"HJECADLK","ACDEIJKL":"EJICADLK","ACDFGHIJ":"HGJCAFDI","ACDFGHIK":"HGFCADIK","ACDFGHIL":"HGFCADLI","ACDFGHJK":"HGJCAFDK","ACDFGHJL":"CGJDAFLH","ACDFGHKL":"HGFCADLK","ACDFGIJK":"CGJDAFIK","ACDFGIJL":"CGJDAFLI","ACDFGIKL":"CGIDAFLK","ACDFGJKL":"CGJDAFLK","ACDFHIJK":"HJFCADIK","ACDFHIJL":"HJFCADLI","ACDFHIKL":"HFICADLK","ACDFHJKL":"HJFCADLK","ACDFIJKL":"CJIDAFLK","ACDGHIJK":"HGJCADIK","ACDGHIJL":"HGJCADLI","ACDGHIKL":"HGICADLK","ACDGHJKL":"HGJCADLK","ACDGIJKL":"IGJCADLK","ACDHIJKL":"HJICADLK","ACEFGHIJ":"HGJCAFEI","ACEFGHIK":"HGECAFIK","ACEFGHIL":"HGECAFLI","ACEFGHJK":"HGJCAFEK","ACEFGHJL":"HGJCAFLE","ACEFGHKL":"HGECAFLK","ACEFGIJK":"EGJCAFIK","ACEFGIJL":"EGJCAFLI","ACEFGIKL":"EGICAFLK","ACEFGJKL":"EGJCAFLK","ACEFHIJK":"HJECAFIK","ACEFHIJL":"HJECAFLI","ACEFHIKL":"HEICAFLK","ACEFHJKL":"HJECAFLK","ACEFIJKL":"EJICAFLK","ACEGHIJK":"EGJCAHIK","ACEGHIJL":"EGJCAHLI","ACEGHIKL":"EGICAHLK","ACEGHJKL":"EGJCAHLK","ACEGIJKL":"EJICAGLK","ACEHIJKL":"EJICAHLK","ACFGHIJK":"HGJCAFIK","ACFGHIJL":"HGJCAFLI","ACFGHIKL":"HGICAFLK","ACFGHJKL":"HGJCAFLK","ACFGIJKL":"IGJCAFLK","ACFHIJKL":"HJICAFLK","ACGHIJKL":"HJICAGLK","ADEFGHIJ":"HGJDAFEI","ADEFGHIK":"HGEDAFIK","ADEFGHIL":"HGEDAFLI","ADEFGHJK":"HGJDAFEK","ADEFGHJL":"HGJDAFLE","ADEFGHKL":"HGEDAFLK","ADEFGIJK":"EGJDAFIK","ADEFGIJL":"EGJDAFLI","ADEFGIKL":"EGIDAFLK","ADEFGJKL":"EGJDAFLK","ADEFHIJK":"HJEDAFIK","ADEFHIJL":"HJEDAFLI","ADEFHIKL":"HEIDAFLK","ADEFHJKL":"HJEDAFLK","ADEFIJKL":"EJIDAFLK","ADEGHIJK":"EGJDAHIK","ADEGHIJL":"EGJDAHLI","ADEGHIKL":"EGIDAHLK","ADEGHJKL":"EGJDAHLK","ADEGIJKL":"EJIDAGLK","ADEHIJKL":"EJIDAHLK","ADFGHIJK":"HGJDAFIK","ADFGHIJL":"HGJDAFLI","ADFGHIKL":"HGIDAFLK","ADFGHJKL":"HGJDAFLK","ADFGIJKL":"IGJDAFLK","ADFHIJKL":"HJIDAFLK","ADGHIJKL":"HJIDAGLK","AEFGHIJK":"EGJFAHIK","AEFGHIJL":"EGJFAHLI","AEFGHIKL":"EGIFAHLK","AEFGHJKL":"EGJFAHLK","AEFGIJKL":"EJIFAGLK","AEFHIJKL":"EJIFAHLK","AEGHIJKL":"EJIAHGLK","AFGHIJKL":"HJIFAGLK","BCDEFGHI":"CGBDHFEI","BCDEFGHJ":"HGBCJFDE","BCDEFGHK":"CGBDHFEK","BCDEFGHL":"CGBDHFLE","BCDEFGIJ":"CGBDJFEI","BCDEFGIK":"CGBDEFIK","BCDEFGIL":"CGBDEFLI","BCDEFGJK":"CGBDJFEK","BCDEFGJL":"CGBDJFLE","BCDEFGKL":"CGBDEFLK","BCDEFHIJ":"CJBDHFEI","BCDEFHIK":"CEBDHFIK","BCDEFHIL":"CEBDHFLI","BCDEFHJK":"CJBDHFEK","BCDEFHJL":"CJBDHFLE","BCDEFHKL":"CEBDHFLK","BCDEFIJK":"CJBDEFIK","BCDEFIJL":"CJBDEFLI","BCDEFIKL":"CEBDIFLK","BCDEFJKL":"CJBDEFLK","BCDEGHIJ":"HGBCJDEI","BCDEGHIK":"EGBCHDIK","BCDEGHIL":"EGBCHDLI","BCDEGHJK":"HGBCJDEK","BCDEGHJL":"HGBCJDLE","BCDEGHKL":"EGBCHDLK","BCDEGIJK":"EGBCJDIK","BCDEGIJL":"EGBCJDLI","BCDEGIKL":"EGBCIDLK","BCDEGJKL":"EGBCJDLK","BCDEHIJK":"EJBCHDIK","BCDEHIJL":"EJBCHDLI","BCDEHIKL":"EIBCHDLK","BCDEHJKL":"EJBCHDLK","BCDEIJKL":"EJBCIDLK","BCDFGHIJ":"HGBCJFDI","BCDFGHIK":"CGBDHFIK","BCDFGHIL":"CGBDHFLI","BCDFGHJK":"HGBCJFDK","BCDFGHJL":"CGBDHFLJ","BCDFGHKL":"CGBDHFLK","BCDFGIJK":"CGBDJFIK","BCDFGIJL":"CGBDJFLI","BCDFGIKL":"CGBDIFLK","BCDFGJKL":"CGBDJFLK","BCDFHIJK":"CJBDHFIK","BCDFHIJL":"CJBDHFLI","BCDFHIKL":"CIBDHFLK","BCDFHJKL":"CJBDHFLK","BCDFIJKL":"CJBDIFLK","BCDGHIJK":"HGBCJDIK","BCDGHIJL":"HGBCJDLI","BCDGHIKL":"HGBCIDLK","BCDGHJKL":"HGBCJDLK","BCDGIJKL":"IGBCJDLK","BCDHIJKL":"HJBCIDLK","BCEFGHIJ":"HGBCJFEI","BCEFGHIK":"EGBCHFIK","BCEFGHIL":"EGBCHFLI","BCEFGHJK":"HGBCJFEK","BCEFGHJL":"HGBCJFLE","BCEFGHKL":"EGBCHFLK","BCEFGIJK":"EGBCJFIK","BCEFGIJL":"EGBCJFLI","BCEFGIKL":"EGBCIFLK","BCEFGJKL":"EGBCJFLK","BCEFHIJK":"EJBCHFIK","BCEFHIJL":"EJBCHFLI","BCEFHIKL":"EIBCHFLK","BCEFHJKL":"EJBCHFLK","BCEFIJKL":"EJBCIFLK","BCEGHIJK":"EJBCHGIK","BCEGHIJL":"EJBCHGLI","BCEGHIKL":"EGBCIHLK","BCEGHJKL":"EJBCHGLK","BCEGIJKL":"EJBCIGLK","BCEHIJKL":"EJBCIHLK","BCFGHIJK":"HGBCJFIK","BCFGHIJL":"HGBCJFLI","BCFGHIKL":"HGBCIFLK","BCFGHJKL":"HGBCJFLK","BCFGIJKL":"IGBCJFLK","BCFHIJKL":"HJBCIFLK","BCGHIJKL":"HJBCIGLK","BDEFGHIJ":"HGBDJFEI","BDEFGHIK":"EGBDHFIK","BDEFGHIL":"EGBDHFLI","BDEFGHJK":"HGBDJFEK","BDEFGHJL":"HGBDJFLE","BDEFGHKL":"EGBDHFLK","BDEFGIJK":"EGBDJFIK","BDEFGIJL":"EGBDJFLI","BDEFGIKL":"EGBDIFLK","BDEFGJKL":"EGBDJFLK","BDEFHIJK":"EJBDHFIK","BDEFHIJL":"EJBDHFLI","BDEFHIKL":"EIBDHFLK","BDEFHJKL":"EJBDHFLK","BDEFIJKL":"EJBDIFLK","BDEGHIJK":"EJBDHGIK","BDEGHIJL":"EJBDHGLI","BDEGHIKL":"EGBDIHLK","BDEGHJKL":"EJBDHGLK","BDEGIJKL":"EJBDIGLK","BDEHIJKL":"EJBDIHLK","BDFGHIJK":"HGBDJFIK","BDFGHIJL":"HGBDJFLI","BDFGHIKL":"HGBDIFLK","BDFGHJKL":"HGBDJFLK","BDFGIJKL":"IGBDJFLK","BDFHIJKL":"HJBDIFLK","BDGHIJKL":"HJBDIGLK","BEFGHIJK":"EJBFHGIK","BEFGHIJL":"EJBFHGLI","BEFGHIKL":"EGBFIHLK","BEFGHJKL":"EJBFHGLK","BEFGIJKL":"EJBFIGLK","BEFHIJKL":"EJBFIHLK","BEGHIJKL":"EJIBHGLK","BFGHIJKL":"HJBFIGLK","CDEFGHIJ":"CGJDHFEI","CDEFGHIK":"CGEDHFIK","CDEFGHIL":"CGEDHFLI","CDEFGHJK":"CGJDHFEK","CDEFGHJL":"CGJDHFLE","CDEFGHKL":"CGEDHFLK","CDEFGIJK":"CGEDJFIK","CDEFGIJL":"CGEDJFLI","CDEFGIKL":"CGEDIFLK","CDEFGJKL":"CGEDJFLK","CDEFHIJK":"CJEDHFIK","CDEFHIJL":"CJEDHFLI","CDEFHIKL":"CEIDHFLK","CDEFHJKL":"CJEDHFLK","CDEFIJKL":"CJEDIFLK","CDEGHIJK":"EGJCHDIK","CDEGHIJL":"EGJCHDLI","CDEGHIKL":"EGICHDLK","CDEGHJKL":"EGJCHDLK","CDEGIJKL":"EGICJDLK","CDEHIJKL":"EJICHDLK","CDFGHIJK":"CGJDHFIK","CDFGHIJL":"CGJDHFLI","CDFGHIKL":"CGIDHFLK","CDFGHJKL":"CGJDHFLK","CDFGIJKL":"CGIDJFLK","CDFHIJKL":"CJIDHFLK","CDGHIJKL":"HGICJDLK","CEFGHIJK":"EGJCHFIK","CEFGHIJL":"EGJCHFLI","CEFGHIKL":"EGICHFLK","CEFGHJKL":"EGJCHFLK","CEFGIJKL":"EGICJFLK","CEFHIJKL":"EJICHFLK","CEGHIJKL":"EJICHGLK","CFGHIJKL":"HGICJFLK","DEFGHIJK":"EGJDHFIK","DEFGHIJL":"EGJDHFLI","DEFGHIKL":"EGIDHFLK","DEFGHJKL":"EGJDHFLK","DEFGIJKL":"EGIDJFLK","DEFHIJKL":"EJIDHFLK","DEGHIJKL":"EJIDHGLK","DFGHIJKL":"HGIDJFLK","EFGHIJKL":"EJIFHGLK"};
+const WIN_ORDER=['A','B','D','E','G','I','K','L'];
+const CAND3={A:'C/E/F/H/I',B:'E/F/G/I/J',D:'B/E/F/I/J',E:'A/B/C/D/F',G:'A/E/H/I/J',I:'C/D/F/G/H',K:'D/E/I/J/L',L:'E/H/I/J/K'};
+function thirdAssign(grps){ if(grps.length!==8) return null; const key=grps.slice().sort().join(''); const v=ANNEXC[key]; if(!v) return null; const map={}; WIN_ORDER.forEach((w,i)=>map[w]=v[i]); return map; }
+function currentThirdAssign(){ const t=thirdData().slice(0,8); if(t.length<8) return null; return thirdAssign(t.map(d=>d.g)); }
+const KO_MATCHES={
+ 73:[{R:'A'},{R:'B'}],74:[{W:'E'},{Tt:'E'}],75:[{W:'F'},{R:'C'}],76:[{W:'C'},{R:'F'}],
+ 77:[{W:'I'},{Tt:'I'}],78:[{R:'E'},{R:'I'}],79:[{W:'A'},{Tt:'A'}],80:[{W:'L'},{Tt:'L'}],
+ 81:[{W:'D'},{Tt:'D'}],82:[{W:'G'},{Tt:'G'}],83:[{R:'K'},{R:'L'}],84:[{W:'H'},{R:'J'}],
+ 85:[{W:'B'},{Tt:'B'}],86:[{W:'J'},{R:'H'}],87:[{W:'K'},{Tt:'K'}],88:[{R:'D'},{R:'G'}],
+ 89:[{MW:74},{MW:77}],90:[{MW:73},{MW:75}],91:[{MW:76},{MW:78}],92:[{MW:79},{MW:80}],
+ 93:[{MW:83},{MW:84}],94:[{MW:81},{MW:82}],95:[{MW:86},{MW:88}],96:[{MW:85},{MW:87}],
+ 97:[{MW:89},{MW:90}],98:[{MW:93},{MW:94}],99:[{MW:91},{MW:92}],100:[{MW:95},{MW:96}],
+ 101:[{MW:97},{MW:98}],102:[{MW:99},{MW:100}],103:[{ML:101},{ML:102}],104:[{MW:101},{MW:102}]
+};
+const ROUNDS=[
+ {name:'32強',ms:[74,77,73,75,83,84,81,82,76,78,79,80,86,88,85,87]},
+ {name:'16強',ms:[89,90,93,94,91,92,95,96]},
+ {name:'8強',ms:[97,98,99,100]},
+ {name:'4強',ms:[101,102]},
+ {name:'決賽',ms:[104]},
+ {name:'季軍戰',ms:[103]}
+];
+let KO={}; try{ KO=JSON.parse(localStorage.getItem("wc26ko")||"{}"); }catch(e){ KO={}; }
+function saveKO(){ try{ localStorage.setItem("wc26ko",JSON.stringify(KO)); }catch(e){} }
+function koTeam(src){
+  if(src.W!==undefined) return rankGroup(src.W).order[0];
+  if(src.R!==undefined) return rankGroup(src.R).order[1];
+  if(src.Tt!==undefined){ const a=currentThirdAssign(); if(!a)return null; const g=a[src.Tt]; return g?rankGroup(g).order[2]:null; }
+  if(src.MW!==undefined) return KO[src.MW]||null;
+  if(src.ML!==undefined){ const w=KO[src.ML]; if(!w)return null; const ps=KO_MATCHES[src.ML].map(koTeam); return ps.find(p=>p&&p!==w)||null; }
+  return null;
+}
+function slotLabel(src){
+  if(src.W!==undefined) return '1'+src.W+' 組首';
+  if(src.R!==undefined) return '2'+src.R+' 組次';
+  if(src.Tt!==undefined) return '第3名('+CAND3[src.Tt]+')';
+  if(src.MW!==undefined) return 'M'+src.MW+' 勝方';
+  if(src.ML!==undefined) return 'M'+src.ML+' 負方';
+  return '?';
+}
+function matchBox(m){
+  const ps=KO_MATCHES[m].map(koTeam), win=KO[m];
+  let h='<div class="kmatch"><div class="kmno">M'+m+'</div>';
+  KO_MATCHES[m].forEach((src,idx)=>{
+    const team=ps[idx], known=!!team;
+    const sel=win&&team===win?' sel':'';
+    const dim=win&&team&&team!==win?' dim':'';
+    const label=known?(flag(team)+'<span>'+T[team].zh+'</span>'):'<span class="slot">'+slotLabel(src)+'</span>';
+    h+='<div class="kteam'+sel+dim+'"'+(known?' data-pick="1" data-m="'+m+'" data-team="'+team+'"':'')+'>'+label+'</div>';
+  });
+  return h+'</div>';
+}
+function renderBracket(){
+  const wrap=document.getElementById("bracket"); if(!wrap)return;
+  let changed=true;
+  while(changed){ changed=false;
+    Object.keys(KO).forEach(m=>{ const ps=KO_MATCHES[m].map(koTeam); if(ps.indexOf(KO[m])<0){ delete KO[m]; changed=true; } }); }
+  let h="";
+  ROUNDS.forEach(rd=>{ h+='<div class="rnd"><div class="rndh">'+rd.name+'</div>';
+    rd.ms.forEach(m=>{ h+=matchBox(m); }); h+='</div>'; });
+  wrap.innerHTML=h;
+  wrap.querySelectorAll('.kteam[data-pick]').forEach(el=>{
+    el.addEventListener("click",()=>{ const m=+el.dataset.m, team=el.dataset.team;
+      if(KO[m]===team) delete KO[m]; else KO[m]=team; saveKO(); renderBracket(); }); });
+}
+
+/* ===== 渲染 ===== */
+function flag(code){ return '<img class="flag" loading="lazy" alt="" src="https://flagcdn.com/'
+  +T[code].iso+'.svg" onerror="this.style.visibility=\'hidden\'">'; }
+function tcell(code){ return flag(code)+T[code].zh; }
+function render(){
+  renderGroups(); renderThird(); renderOverview(); renderBracket(); markSaved();
+}
+function renderGroups(){
+  const wrap=document.getElementById("groups"); let h="";
+  Object.keys(GROUPS).forEach(g=>{
+    const {order,st,played}=rankGroup(g);
+    const S=groupScenario(g);
+    h+='<div class="gcard"><div class="ghead"><span><span class="gl">'+g+' 組</span></span>'
+      +'<span class="sub">'+played+'/6 場</span></div>';
+    // 排名表（狀態抽出表外,避免長隊名爆位）
+    h+='<table class="stand"><tr><th class="cpos">#</th><th class="tn">球隊</th><th>賽</th><th>勝</th><th>和</th><th>負</th>'
+      +'<th>得</th><th>失</th><th>差</th><th>分</th></tr>';
+    order.forEach((c,i)=>{
+      const s=st[c], pc=i===0?"p1":i===1?"p2":i===2?"p3":"";
+      h+='<tr class="'+pc+'"><td class="cpos">'+(i+1)+'</td>'
+        +'<td class="tn">'+tcell(c)+'</td><td>'+s.P+'</td><td>'+s.W+'</td><td>'+s.D+'</td><td>'+s.L+'</td>'
+        +'<td>'+s.GF+'</td><td>'+s.GA+'</td><td>'+(s.GD>0?'+':'')+s.GD+'</td>'
+        +'<td class="pts">'+s.Pts+'</td></tr>';
+    });
+    h+='</table>';
+    // 狀態標籤（只列有定論嘅）
+    let chips="";
+    order.forEach(c=>{ const sb=S.status[c]; if(sb.badge && sb.badge!=='出線未定'){
+      chips+='<span class="schip '+sb.cls+'">'+flag(c)+T[c].zh+' '+sb.badge+'</span>'; }});
+    if(chips) h+='<div class="chips">'+chips+'</div>';
+    // 出線情境：精確窮舉
+    if(S.n>0){
+      h+='<details class="scen"><summary>🔢 出線情境（餘 '+S.n+' 場 · 共 '+S.total+' 種結果）</summary><div class="scbox">';
+      if(S.n<=3){
+        S.rows.forEach(row=>{
+          const rr=rowResult(row.blocks);
+          let out;
+          if(rr.clean) out='<b class="qg">出線：'+T[rr.q[0]].zh+'、'+T[rr.q[1]].zh+'</b> ｜ 第3：'+T[rr.third].zh;
+          else { const sure=rr.sure.map(c=>T[c].zh).join('、');
+            out='<b class="qg">出線：'+(sure?sure+' ＋ ':'')+'</b><span class="gd">'+rr.contest.map(c=>T[c].zh).join(' / ')+' 爭（視得失球）</span>'; }
+          h+='<div class="srow"><span class="cond">'+comboText(g,row.combo)+'</span> → '+out+'</div>';
+        });
+      } else {
+        h+='<div class="scnote">情境太多，未方便逐個列。再入多幾場賽果（淨返 ≤3 場未踢）就會逐個比數結果列出。上面「狀態」欄已經係精確計算（已出線／出局係數學上肯定）。</div>';
+      }
+      h+='</div></details>';
+    }
+    // 賽程輸入
+    h+='<div class="fixt">';
+    for(let i=0;i<6;i++){
+      const codes=GROUPS[g], H=codes[FIX[i][0]], A=codes[FIX[i][1]], r=getR(g,i);
+      if(i%2===0) h+='<div class="md">'+MDNAME[i]+'</div>';
+      h+='<div class="mrow"><span class="h">'+tcell(H)+'</span>'
+        +'<input type="number" min="0" inputmode="numeric" data-g="'+g+'" data-i="'+i+'" data-s="h" value="'+r.h+'">'
+        +'<span class="vs">:</span>'
+        +'<input type="number" min="0" inputmode="numeric" data-g="'+g+'" data-i="'+i+'" data-s="a" value="'+r.a+'">'
+        +'<span class="a">'+tcell(A)+'</span></div>';
+    }
+    h+='</div></div>';
+  });
+  wrap.innerHTML=h;
+  wrap.querySelectorAll("input").forEach(inp=>{
+    inp.addEventListener("change",e=>{ const d=e.target.dataset;
+      setR(d.g,+d.i,d.s,e.target.value); });
+  });
+}
+/* 收集每組第 3 名 */
+function thirdData(){
+  const arr=[];
+  Object.keys(GROUPS).forEach(g=>{ const {order,st,played}=rankGroup(g);
+    const c=order[2], s=st[c]; arr.push({g,code:c,P:s.P,Pts:s.Pts,GD:s.GD,GF:s.GF,done:played===6}); });
+  arr.sort((x,y)=> y.Pts-x.Pts || y.GD-x.GD || y.GF-x.GF || T[x.code].r-T[y.code].r );
+  return arr;
+}
+function renderThird(){
+  const arr=thirdData(); const tbl=document.getElementById("thirdTbl");
+  const cut = arr.length>7 ? arr[7].Pts : null;       // 第8名（出線尾隊）
+  const firstOut = arr.length>8 ? arr[8].Pts : null;  // 第9名（出局首隊）
+  let h='<tr><th>名</th><th class="l">球隊</th><th>組</th><th>賽</th><th>分</th><th>得失</th><th>入球</th><th>距分界</th><th>結果</th></tr>';
+  arr.forEach((d,i)=>{
+    const inq=i<8; const cls=inq?"in":"cut";
+    let gap='—';
+    if(inq && firstOut!==null){ const m=d.Pts-firstOut;
+      gap = m>0? '<span style="color:var(--acc)">領先 '+m+' 分</span>' : '<span style="color:var(--gold)">同分・得失球險過</span>'; }
+    else if(!inq && cut!==null){ const m=cut-d.Pts;
+      gap = m>0? '<span style="color:var(--red)">爭差 '+m+' 分</span>' : '<span style="color:var(--gold)">同分・得失球差過</span>'; }
+    h+='<tr class="'+cls+'"><td>'+(i+1)+'</td><td class="l">'+tcell(d.code)+'</td><td>'+d.g+'</td>'
+      +'<td>'+d.P+'</td><td class="pts">'+d.Pts+'</td><td>'+(d.GD>0?'+':'')+d.GD+'</td><td>'+d.GF+'</td>'
+      +'<td>'+gap+'</td>'
+      +'<td>'+(inq?'<span class="badge b-q">出線</span>':'<span class="badge b-out">淘汰</span>')+'</td></tr>';
+    if(i===7) h+='<tr class="cutline"><td colspan="9"><div><span>出線分界 '+(cut!==null?'（≥ '+cut+' 分）':'（前 8）')+'</span></div></td></tr>';
+  });
+  tbl.innerHTML=h;
+}
+function renderOverview(){
+  const third=thirdData(); const top8=third.slice(0,8).map(d=>d.code);
+  const wrap=document.getElementById("overview"); let h="";
+  Object.keys(GROUPS).forEach(g=>{
+    const {order,st}=rankGroup(g);
+    h+='<div class="ovc"><h4>'+g+' 組</h4>';
+    order.forEach((c,i)=>{
+      let tag="",col="var(--mut)";
+      if(i===0){tag="1st";col="var(--acc)";}
+      else if(i===1){tag="2nd";col="var(--blue)";}
+      else if(i===2){ if(top8.includes(c)){tag="3rd ✓";col="var(--gold)";} else {tag="3rd";} }
+      else tag="—";
+      h+='<div class="ovrow"><span>'+tcell(c)+'</span><span class="r" style="color:'+col+'">'+tag+'</span></div>';
+    });
+    h+='</div>';
+  });
+  wrap.innerHTML=h;
+}
+
+/* ===== Tabs / 按鈕 ===== */
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
+  document.querySelectorAll(".view").forEach(x=>x.classList.remove("on"));
+  t.classList.add("on"); document.getElementById("v-"+t.dataset.v).classList.add("on");
+}));
+document.getElementById("reset").addEventListener("click",()=>{
+  if(confirm("清空全部已輸入賽果？")){ R={}; KO={}; save(); saveKO(); render(); }
+});
+/* ===== 自動更新官方賽果 (TheSportsDB 免費 API) ===== */
+const NAMEMAP={"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Korea Republic":"KOR","Czech Republic":"CZE","Czechia":"CZE","Canada":"CAN","Bosnia-Herzegovina":"BIH","Bosnia and Herzegovina":"BIH","Qatar":"QAT","Switzerland":"SUI","Brazil":"BRA","Morocco":"MAR","Haiti":"HAI","Scotland":"SCO","USA":"USA","United States":"USA","Paraguay":"PAR","Australia":"AUS","Turkey":"TUR","Türkiye":"TUR","Germany":"GER","Curacao":"CUW","Curaçao":"CUW","Ivory Coast":"CIV","Côte d'Ivoire":"CIV","Cote d'Ivoire":"CIV","Ecuador":"ECU","Netherlands":"NED","Japan":"JPN","Sweden":"SWE","Tunisia":"TUN","Belgium":"BEL","Egypt":"EGY","Iran":"IRN","New Zealand":"NZL","Spain":"ESP","Cape Verde":"CPV","Cabo Verde":"CPV","Saudi Arabia":"KSA","Uruguay":"URU","France":"FRA","Senegal":"SEN","Iraq":"IRQ","Norway":"NOR","Argentina":"ARG","Algeria":"ALG","Austria":"AUT","Jordan":"JOR","Portugal":"POR","DR Congo":"COD","Congo DR":"COD","Uzbekistan":"UZB","Colombia":"COL","England":"ENG","Croatia":"CRO","Ghana":"GHA","Panama":"PAN"};
+function findFixture(x,y){ for(const g in GROUPS){ const codes=GROUPS[g]; if(codes.indexOf(x)>=0&&codes.indexOf(y)>=0){ for(let i=0;i<6;i++){ const H=codes[FIX[i][0]],A=codes[FIX[i][1]]; if((H===x&&A===y)||(H===y&&A===x)) return {g,i,H,A}; } } } return null; }
+function fetchOfficial(){
+  const st=document.getElementById("autost"); st.textContent="更新緊…";
+  fetch("https://www.thesportsdb.com/api/v1/json/3/eventsseason.php?id=4429&s=2026")
+    .then(r=>r.json())
+    .then(d=>{
+      const evs=(d&&d.events)||[]; let n=0;
+      evs.forEach(e=>{ const hs=e.intHomeScore, as=e.intAwayScore;
+        if(hs==null||hs===""||as==null||as==="") return;
+        const x=NAMEMAP[(e.strHomeTeam||"").trim()], y=NAMEMAP[(e.strAwayTeam||"").trim()];
+        if(!x||!y) return;
+        const f=findFixture(x,y); if(!f) return;
+        if(x===f.H) R[f.g+f.i]={h:+hs,a:+as}; else R[f.g+f.i]={h:+as,a:+hs};
+        n++; });
+      save(); render();
+      st.textContent = n? ("已自動更新 "+n+" 場官方賽果") : "暫時冇可更新嘅賽果";
+    })
+    .catch(()=>{ st.textContent="攞唔到官方數據（網絡／來源問題），可手動輸入"; });
+}
+document.getElementById("auto").addEventListener("click",fetchOfficial);
+document.getElementById("demo").addEventListener("click",()=>{
+  // 隨機示範賽果（方便睇效果）
+  R={}; Object.keys(GROUPS).forEach(g=>{ for(let i=0;i<6;i++){
+    R[mid(g,i)]={h:Math.floor(Math.random()*4),a:Math.floor(Math.random()*4)}; }});
+  save(); render();
+});
+
+render();
+if(Object.keys(R).length===0) fetchOfficial();  // 首次開頁自動拉官方賽果
+</script>
+</body>
+</html>
