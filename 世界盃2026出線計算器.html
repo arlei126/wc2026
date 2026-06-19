@@ -571,7 +571,8 @@ document.getElementById("demo").addEventListener("click",()=>{
 });
 
 render();
-if(Object.keys(R).length===0) fetchOfficial();  // 首次開頁自動拉官方賽果
+fetchOfficial();                      // 每次開頁自動拉最新官方賽果
+setInterval(fetchOfficial, 120000);   // 開住期間每 2 分鐘自動再拉一次
 </script>
 </body>
 </html>
