@@ -28,6 +28,8 @@
   button.act:hover{border-color:var(--acc2)}
   button.act.prim{background:var(--acc2);border-color:var(--acc2);color:#fff;font-weight:700}
   button.act.prim:hover{filter:brightness(1.08)}
+  .sbbanner{background:#fff6da;border:1px solid #e8d48a;color:#7a5d12;border-radius:8px;
+    padding:8px 12px;margin-top:10px;font-size:12.5px;line-height:1.5}
   main{padding:14px 16px 60px;max-width:1180px;margin:0 auto}
   .view{display:none}.view.on{display:block}
   /* group grid */
@@ -136,12 +138,15 @@
     <div class="tab" data-v="bracket">32強走線</div>
   </div>
   <div class="bar">
-    <button class="act prim" id="auto">⚡ 自動更新官方賽果</button>
+    <button class="act" id="sandbox">🧪 試算模式</button>
     <button class="act" id="demo">填入示範賽果</button>
+    <button class="act" id="export">⬇ 匯出備份</button>
+    <button class="act" id="import">⬆ 匯入</button>
     <button class="act" id="reset">清空全部</button>
-    <span class="sub" id="autost"></span>
+    <input type="file" id="importfile" accept="application/json,.json" style="display:none">
     <span class="sub" id="saved"></span>
   </div>
+  <div id="sbbanner" class="sbbanner" style="display:none">🧪 <b>試算模式</b>：而家改嘅嘢淨係試下，<b>唔會儲存</b>。撳「↩ 退出試算」即刻還原你嘅真實賽果。</div>
   <details class="rules"><summary>📖 今屆出線規則（按一下睇）</summary>
   <div>
     <b style="color:var(--txt)">出線辦法：</b>每組首 2 名直接出線；12 個小組第 3 名之中，最好成績嘅 8 隊一齊晉級 32 強。<br><br>
@@ -198,10 +203,13 @@ const MDNAME = ["第 1 輪","第 1 輪","第 2 輪","第 2 輪","第 3 輪","第
 
 /* ===== 賽果儲存 ===== */
 let R = {};
+let sandbox = false;   // 試算模式:開咗就唔會寫入儲存
 try{ R = JSON.parse(localStorage.getItem("wc26")||"{}"); }catch(e){ R={}; }
-function save(){ try{ localStorage.setItem("wc26",JSON.stringify(R)); markSaved(); }catch(e){} }
-function markSaved(){ const n=Object.keys(R).filter(k=>R[k]&&R[k].h!==""&&R[k].a!=="").length;
-  document.getElementById("saved").textContent = n? ("已輸入 "+n+" 場・自動儲存"):"" ; }
+function save(){ try{ if(!sandbox) localStorage.setItem("wc26",JSON.stringify(R)); markSaved(); }catch(e){} }
+function markSaved(){ const s=document.getElementById("saved"); if(!s) return;
+  if(sandbox){ s.textContent="🧪 試算中（改動唔會儲存）"; return; }
+  const n=Object.keys(R).filter(k=>R[k]&&R[k].h!==""&&R[k].a!=="").length;
+  s.textContent = n? ("已輸入 "+n+" 場・自動儲存"):"" ; }
 function mid(g,i){ return g+i; }
 function getR(g,i){ const m=R[mid(g,i)]; return m||{h:"",a:""}; }
 function setR(g,i,side,val){ const k=mid(g,i); if(!R[k])R[k]={h:"",a:""};
@@ -376,7 +384,7 @@ const ROUNDS=[
  {name:'季軍戰',ms:[103]}
 ];
 let KO={}; try{ KO=JSON.parse(localStorage.getItem("wc26ko")||"{}"); }catch(e){ KO={}; }
-function saveKO(){ try{ localStorage.setItem("wc26ko",JSON.stringify(KO)); }catch(e){} }
+function saveKO(){ try{ if(!sandbox) localStorage.setItem("wc26ko",JSON.stringify(KO)); }catch(e){} }
 function koTeam(src){
   if(src.W!==undefined) return rankGroup(src.W).order[0];
   if(src.R!==undefined) return rankGroup(src.R).order[1];
@@ -428,6 +436,20 @@ function render(){
 }
 function renderGroups(){
   const wrap=document.getElementById("groups"); let h="";
+  // 各組目前第3名分數(跨組比較最佳第3名用)
+  const thirdPts={};
+  Object.keys(GROUPS).forEach(g=>{ const r=rankGroup(g); thirdPts[g]=r.st[r.order[2]].Pts; });
+  const sortedThird=Object.values(thirdPts).slice().sort((a,b)=>b-a);
+  const cut3 = sortedThird.length>=8 ? sortedThird[7] : 0;   // 第8名分界(暫定)
+  // 一個第3名攞 P 分,同其他組第3名比,睇入唔入到最佳8隊
+  function qual3(g,P){
+    let above=0,eq=0;
+    Object.keys(GROUPS).forEach(g2=>{ if(g2!==g){ const o=thirdPts[g2]; if(o>P)above++; else if(o===P)eq++; }});
+    const best=above+1, worst=above+eq+1;
+    if(worst<=8) return {t:'✓夠分入8強區',c:'b-q'};
+    if(best>8)  return {t:'✗暫時唔夠',c:'b-out'};
+    return {t:'≈睇得失球/其他組',c:'b-live'};
+  }
   Object.keys(GROUPS).forEach(g=>{
     const {order,st,played}=rankGroup(g);
     const S=groupScenario(g);
@@ -452,11 +474,15 @@ function renderGroups(){
     // 出線情境：精確窮舉
     if(S.n>0){
       h+='<details class="scen"><summary>🔢 出線情境（餘 '+S.n+' 場 · 共 '+S.total+' 種結果）</summary><div class="scbox">';
+      h+='<div class="scnote">📊 跨組「最佳第3名」出線分界：目前約 <b>≥'+cut3+' 分</b>（暫定，會隨其他組更新）。下面每個情境標埋本組第3名夠唔夠分入最佳 8 隊。</div>';
       if(S.n<=3){
         S.rows.forEach(row=>{
           const rr=rowResult(row.blocks);
           let out;
-          if(rr.clean) out='<b class="qg">出線：'+T[rr.q[0]].zh+'、'+T[rr.q[1]].zh+'</b> ｜ 第3：'+T[rr.third].zh;
+          if(rr.clean){
+            const outs=outcomesAll(g,row.combo), pts=ptsOf(GROUPS[g],outs), P=pts[rr.third], q=qual3(g,P);
+            out='<b class="qg">出線：'+T[rr.q[0]].zh+'、'+T[rr.q[1]].zh+'</b> ｜ 第3：'+T[rr.third].zh+' '+P+'分 <span class="badge '+q.c+'">'+q.t+'</span>';
+          }
           else { const sure=rr.sure.map(c=>T[c].zh).join('、');
             out='<b class="qg">出線：'+(sure?sure+' ＋ ':'')+'</b><span class="gd">'+rr.contest.map(c=>T[c].zh).join(' / ')+' 爭（視得失球）</span>'; }
           h+='<div class="srow"><span class="cond">'+comboText(g,row.combo)+'</span> → '+out+'</div>';
@@ -541,38 +567,51 @@ document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
 document.getElementById("reset").addEventListener("click",()=>{
   if(confirm("清空全部已輸入賽果？")){ R={}; KO={}; save(); saveKO(); render(); }
 });
-/* ===== 自動更新官方賽果 (TheSportsDB 免費 API) ===== */
-const NAMEMAP={"Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Korea Republic":"KOR","Czech Republic":"CZE","Czechia":"CZE","Canada":"CAN","Bosnia-Herzegovina":"BIH","Bosnia and Herzegovina":"BIH","Qatar":"QAT","Switzerland":"SUI","Brazil":"BRA","Morocco":"MAR","Haiti":"HAI","Scotland":"SCO","USA":"USA","United States":"USA","Paraguay":"PAR","Australia":"AUS","Turkey":"TUR","Türkiye":"TUR","Germany":"GER","Curacao":"CUW","Curaçao":"CUW","Ivory Coast":"CIV","Côte d'Ivoire":"CIV","Cote d'Ivoire":"CIV","Ecuador":"ECU","Netherlands":"NED","Japan":"JPN","Sweden":"SWE","Tunisia":"TUN","Belgium":"BEL","Egypt":"EGY","Iran":"IRN","New Zealand":"NZL","Spain":"ESP","Cape Verde":"CPV","Cabo Verde":"CPV","Saudi Arabia":"KSA","Uruguay":"URU","France":"FRA","Senegal":"SEN","Iraq":"IRQ","Norway":"NOR","Argentina":"ARG","Algeria":"ALG","Austria":"AUT","Jordan":"JOR","Portugal":"POR","DR Congo":"COD","Congo DR":"COD","Uzbekistan":"UZB","Colombia":"COL","England":"ENG","Croatia":"CRO","Ghana":"GHA","Panama":"PAN"};
-function findFixture(x,y){ for(const g in GROUPS){ const codes=GROUPS[g]; if(codes.indexOf(x)>=0&&codes.indexOf(y)>=0){ for(let i=0;i<6;i++){ const H=codes[FIX[i][0]],A=codes[FIX[i][1]]; if((H===x&&A===y)||(H===y&&A===x)) return {g,i,H,A}; } } } return null; }
-function fetchOfficial(){
-  const st=document.getElementById("autost"); st.textContent="更新緊…";
-  fetch("https://www.thesportsdb.com/api/v1/json/3/eventsseason.php?id=4429&s=2026")
-    .then(r=>r.json())
-    .then(d=>{
-      const evs=(d&&d.events)||[]; let n=0;
-      evs.forEach(e=>{ const hs=e.intHomeScore, as=e.intAwayScore;
-        if(hs==null||hs===""||as==null||as==="") return;
-        const x=NAMEMAP[(e.strHomeTeam||"").trim()], y=NAMEMAP[(e.strAwayTeam||"").trim()];
-        if(!x||!y) return;
-        const f=findFixture(x,y); if(!f) return;
-        if(x===f.H) R[f.g+f.i]={h:+hs,a:+as}; else R[f.g+f.i]={h:+as,a:+hs};
-        n++; });
-      save(); render();
-      st.textContent = n? ("已自動更新 "+n+" 場官方賽果") : "暫時冇可更新嘅賽果";
-    })
-    .catch(()=>{ st.textContent="攞唔到官方數據（網絡／來源問題），可手動輸入"; });
+/* ===== 試算模式（試完唔影響真實賽果）===== */
+function setSandbox(on){
+  sandbox=on;
+  const b=document.getElementById("sbbanner"); if(b) b.style.display=on?"block":"none";
+  const btn=document.getElementById("sandbox");
+  if(btn){ btn.textContent=on?"↩ 退出試算":"🧪 試算模式"; btn.classList.toggle("prim",on); }
+  if(!on){ // 退出:由儲存還原真實賽果
+    try{ R=JSON.parse(localStorage.getItem("wc26")||"{}"); }catch(e){ R={}; }
+    try{ KO=JSON.parse(localStorage.getItem("wc26ko")||"{}"); }catch(e){ KO={}; }
+  }
+  render();
 }
-document.getElementById("auto").addEventListener("click",fetchOfficial);
+document.getElementById("sandbox").addEventListener("click",()=>setSandbox(!sandbox));
 document.getElementById("demo").addEventListener("click",()=>{
-  // 隨機示範賽果（方便睇效果）
+  if(!sandbox) setSandbox(true);           // 示範自動入試算模式,唔會蓋你真實賽果
   R={}; Object.keys(GROUPS).forEach(g=>{ for(let i=0;i<6;i++){
     R[mid(g,i)]={h:Math.floor(Math.random()*4),a:Math.floor(Math.random()*4)}; }});
   save(); render();
 });
+/* ===== 匯出 / 匯入備份 ===== */
+document.getElementById("export").addEventListener("click",()=>{
+  const data=JSON.stringify({v:1,R:R,KO:KO});
+  const blob=new Blob([data],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="wc2026-data.json"; document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },100);
+});
+document.getElementById("import").addEventListener("click",()=>document.getElementById("importfile").click());
+document.getElementById("importfile").addEventListener("change",e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{ try{ const d=JSON.parse(rd.result);
+      if(d&&d.R){ R=d.R; KO=d.KO||{}; if(!sandbox){ save(); saveKO(); } render(); alert("匯入完成！"); }
+      else alert("檔案入面冇賽果資料。"); }
+    catch(err){ alert("檔案格式唔啱，匯入唔到。"); } };
+  rd.readAsText(f); e.target.value="";
+});
 
 render();
-fetchOfficial();                      // 每次開頁自動拉最新官方賽果
-setInterval(fetchOfficial, 120000);   // 開住期間每 2 分鐘自動再拉一次
+// 本機未有資料時,試讀 repo 內 data.json(畀公開網址顯示用;冇就照常空白)
+if(Object.keys(R).length===0){
+  fetch("./data.json").then(r=>r.ok?r.json():null).then(d=>{
+    if(d&&d.R){ R=d.R; KO=d.KO||{}; render(); }
+  }).catch(()=>{});
+}
 </script>
 </body>
 </html>
