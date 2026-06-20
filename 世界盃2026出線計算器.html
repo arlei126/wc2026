@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-HK">
 <head>
@@ -121,6 +122,10 @@
   .bracket-scroll{overflow-x:auto;padding:4px 2px 12px}
   .bracket{display:flex;gap:14px;min-width:1180px;align-items:stretch;position:relative}
   #koSvg{position:absolute;left:0;top:0;pointer-events:none;z-index:0}
+  #brktOv{position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;
+    background:rgba(13,17,23,.55);backdrop-filter:blur(1px);border-radius:10px;text-align:center;
+    color:var(--txt);font-size:18px;font-weight:700;line-height:1.6}
+  #brktOv small{color:var(--mut);font-size:12px;font-weight:500}
   #koSvg path{fill:none;stroke:var(--mut);stroke-width:1.5;opacity:.55}
   .rnd{position:relative;z-index:1;display:flex;flex-direction:column;justify-content:space-around;gap:10px;min-width:128px;flex:1}
   .rnd.rndc{flex:0 0 146px;justify-content:center;gap:26px}
@@ -129,6 +134,7 @@
   .kmatch{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px;position:relative}
   .rndc .kmatch{border-color:var(--gold)}
   .kmno{position:absolute;top:-7px;left:7px;background:var(--bg);font-size:9px;color:var(--mut);padding:0 4px}
+  .kmno .ksc{color:var(--gold);font-weight:700;margin-left:4px}
   .kteam{display:flex;align-items:center;gap:5px;padding:6px;font-size:12.5px;border-radius:5px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .kteam+.kteam{border-top:1px dashed var(--line)}
@@ -141,7 +147,7 @@
   .kteam .gtag{margin-left:auto;color:var(--mut);font-size:10px;font-weight:600;flex-shrink:0}
   .kteam .knm{display:flex;flex-direction:column;line-height:1.18;min-width:0;overflow:hidden;white-space:nowrap;flex:1}
   .kteam .knm .kseed{font-size:9px;color:var(--mut);font-weight:400}
-  .kteam .ptag{color:var(--gold);font-size:11px;font-weight:700;flex-shrink:0;margin-left:6px;min-width:34px;text-align:right}
+  .kteam .ptag{color:#3fb95a;font-size:11px;font-weight:700;flex-shrink:0;margin-left:6px;min-width:34px;text-align:right}
   .bracket-scroll{max-width:100%;-webkit-overflow-scrolling:touch}
   @media(max-width:680px){
     .bracket{min-width:1020px;gap:9px}
@@ -231,15 +237,24 @@
     <div class="ov" id="overview"></div>
   </section>
   <section class="view" id="v-bracket">
-    <div class="note"><b>32 強走線</b>：上面個樹係<b>用目前排名嘅推算陣容</b>（左右兩半向中決賽收窄，撳隊名揀贏方）。但小組未踢完，邊隊真係出線係有機率嘅——撳「<b>計各隊機率</b>」會用 <b>Elo＋Poisson＋Monte Carlo</b> 跑幾千次，<b>下面個表</b>就列出每隊嘅<b>組首／組次／第3名出線／總出線</b>機率（即係「邊隊排第幾、出唔出到線」），再到入8強…奪冠。走線格右上角＝該隊奪冠率。已入賽果照當真，淨係抽未踢。</div>
-    <div class="bar" style="margin-bottom:10px">
-      <button class="act prim" id="simRun">▶ 計各隊機率</button>
+    <div class="note"><b>32 強走線</b>：撳「<b>逐圈推演</b>」一圈一圈開——先<b>抽小組賽出 32強對陣</b>，再撳「開下一圈」逐步開 16強→8強→4強→決賽→冠軍（每圈隨機，唔啱可「重抽呢圈」）。已入賽果照當真，淨係抽未踢嘅。想睇每隊嘅<b>組首／組次／第3出線／總出線</b>機率，撳下面「<b>計各隊出線機率</b>」跑幾千次出個表（同走線分開，唔會填爆個樹）。</div>
+    <div class="bar" id="stepBar" style="margin:4px 0 8px;flex-wrap:wrap">
+      <b style="color:var(--txt);font-size:13px">🎲 逐圈推演：</b>
+      <button class="act prim" id="stepGroup">① 抽小組賽（出32強）</button>
+      <button class="act prim" id="stepNext">▶ 開下一圈</button>
+      <button class="act" id="stepReroll">↺ 重抽呢圈</button>
+      <button class="act" id="stepAll">⏭ 一次到底</button>
+      <button class="act" id="stepReset">✕ 清除</button>
+      <span class="sub" id="stepStat">隨機抽一次完整賽事，一圈一圈開（32強→16強→8強→4強→決賽）。每圈可重抽。先撳「抽小組賽」。已入賽果照當真。</span>
+    </div>
+    <div class="bar" style="margin:0 0 8px">
+      <button class="act" id="simRun">📊 計各隊出線機率</button>
       <select id="simN" class="act">
         <option value="2000">2000 次（快）</option>
         <option value="5000" selected>5000 次</option>
         <option value="10000">10000 次（準啲）</option>
       </select>
-      <span class="sub" id="simStat">未計。撳「計各隊機率」開始。</span>
+      <span class="sub" id="simStat">想睇每隊組首／組次／第3出線／總出線／奪冠機率，撳「計各隊出線機率」跑幾千次（同走線分開）。</span>
     </div>
     <div class="pbarwrap"><div id="simBar" class="pbar"></div></div>
     <div class="bracket-scroll"><div class="bracket" id="bracket"></div></div>
@@ -286,8 +301,8 @@ function markSaved(){ const s=document.getElementById("saved"); if(!s) return;
 function mid(g,i){ return g+i; }
 function getR(g,i){ const m=R[mid(g,i)]; return m||{h:"",a:""}; }
 function setR(g,i,side,val){ const k=mid(g,i); if(!R[k])R[k]={h:"",a:""};
-  R[k][side]= val===""?"":Math.max(0,parseInt(val,10)||0); SIMP=null; save(); render(); }
-function clearMatch(g,i){ delete R[mid(g,i)]; SIMP=null; save(); render(); }
+  R[k][side]= val===""?"":Math.max(0,parseInt(val,10)||0); SIMP=null; PRED=null; STEPN=0; save(); render(); }
+function clearMatch(g,i){ delete R[mid(g,i)]; SIMP=null; PRED=null; STEPN=0; save(); render(); }
 
 /* ===== 排名核心 ===== */
 function blankStat(code){ return {code,P:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,Pts:0}; }
@@ -544,16 +559,20 @@ const BCOLS=[
  {name:'32強', ms:[76,78,79,80,86,88,85,87]}
 ];
 let KO={}; try{ KO=JSON.parse(localStorage.getItem("wc26ko")||"{}"); }catch(e){ KO={}; }
-let SIMP=null;   // 模擬出嚟嘅每隊機率 {code:{r32..ch (0-1)}}；改賽果會清走
+let SIMP=null;   // 模擬出嚟嘅每隊機率 {code:{...}}；改賽果會清走
+let PRED=null;   // 走線陣容（逐圈推演填入）；未開始為 null
 /* 邊場勝方入邊場（畫連接線用） */
 const PARENT={}; for(const m in KO_MATCHES){ KO_MATCHES[m].forEach(s=>{ if(s.MW!==undefined) PARENT[s.MW]=+m; }); }
 function saveKO(){ try{ if(!sandbox) localStorage.setItem("wc26ko",JSON.stringify(KO)); }catch(e){} }
 function koTeam(src){
-  if(src.W!==undefined) return rankGroup(src.W).order[0];
-  if(src.R!==undefined) return rankGroup(src.R).order[1];
-  if(src.Tt!==undefined){ const a=currentThirdAssign(); if(!a)return null; const g=a[src.Tt]; return g?rankGroup(g).order[2]:null; }
-  if(src.MW!==undefined) return KO[src.MW]||null;
-  if(src.ML!==undefined){ const w=KO[src.ML]; if(!w)return null; const ps=KO_MATCHES[src.ML].map(koTeam); return ps.find(p=>p&&p!==w)||null; }
+  // 小組來源（首/次/第3名）：未 Gen（PRED 為 null）一律當未定 → 走線顯示空格
+  if(src.W!==undefined)  return PRED ? PRED.order[src.W][0] : null;
+  if(src.R!==undefined)  return PRED ? PRED.order[src.R][1] : null;
+  if(src.Tt!==undefined){ if(!PRED) return null; const g=PRED.assign[src.Tt]; return g?PRED.order[g][2]:null; }
+  // 淘汰賽：手動揀贏方優先，其次用預測勝方
+  if(src.MW!==undefined) return KO[src.MW] || (PRED&&PRED.win[src.MW]) || null;
+  if(src.ML!==undefined){ const w=KO[src.ML] || (PRED&&PRED.win[src.ML]); if(!w)return null;
+    const ps=KO_MATCHES[src.ML].map(koTeam); return ps.find(p=>p&&p!==w)||null; }
   return null;
 }
 function slotLabel(src){
@@ -565,16 +584,27 @@ function slotLabel(src){
   return '?';
 }
 function groupOf(code){ for(const g in GROUPS){ if(GROUPS[g].indexOf(code)>=0) return g; } return ''; }
-function seedLabel(c){ const g=groupOf(c); if(!g) return ''; const o=rankGroup(g).order; const i=o.indexOf(c);
+function seedLabel(c){ const g=groupOf(c); if(!g) return ''; const o=(PRED?PRED.order[g]:rankGroup(g).order); const i=o.indexOf(c);
   return g+'組'+(i===0?'首名':i===1?'次名':i===2?'第3名':''); }
+function boxProb(m,src,team){
+  if(!SIMP||!SIMP[team]) return '';
+  let v, tip;
+  if(src.W!==undefined){ v=SIMP[team].p1; tip='坐正組首嘅機率'; }
+  else if(src.R!==undefined){ v=SIMP[team].p2; tip='坐正組次嘅機率'; }
+  else if(src.Tt!==undefined){ v=SIMP[team].p3q; tip='以第3名出線嘅機率'; }
+  else { const key=m>=104?'fin':m>=101?'sf':m>=97?'qf':m>=89?'r16':'r32';
+    v=SIMP[team][key]; tip='打到入呢一圈嘅機率'; }
+  return (v==null)?'':'<span class="ptag" title="'+tip+'">'+fmtPct(v)+'</span>';
+}
 function matchBox(m){
-  const ps=KO_MATCHES[m].map(koTeam), win=KO[m];
-  let h='<div class="kmatch" data-mm="'+m+'"><div class="kmno">M'+m+'</div>';
+  const ps=KO_MATCHES[m].map(koTeam), win=KO[m]||(PRED&&PRED.win[m])||null;
+  const sl=(PRED&&PRED.score&&PRED.score[m])?'<span class="ksc">'+PRED.score[m]+'</span>':'';
+  let h='<div class="kmatch" data-mm="'+m+'"><div class="kmno">M'+m+sl+'</div>';
   KO_MATCHES[m].forEach((src,idx)=>{
     const team=ps[idx], known=!!team;
     const sel=win&&team===win?' sel':'';
     const dim=win&&team&&team!==win?' dim':'';
-    const ptag=(known&&SIMP&&SIMP[team])?'<span class="ptag">'+fmtPct(SIMP[team].ch)+'</span>':'';
+    const ptag=known?boxProb(m,src,team):'';
     const label=known
       ? flag(team)+'<span class="knm">'+T[team].zh+'<small class="kseed">'+seedLabel(team)+'</small></span>'+ptag
       : '<span class="slot">'+slotLabel(src)+'</span>';
@@ -595,6 +625,9 @@ function renderBracket(){
     h+='</div>';
   });
   wrap.innerHTML=h;
+  const ov0=document.getElementById('brktOv'); if(ov0) ov0.remove();
+  if(!PRED){ wrap.insertAdjacentHTML('beforeend',
+    '<div id="brktOv"><div>🎲 未開始<br><small>撳上面「① 抽小組賽（出32強）」<br>一圈一圈開出走線</small></div></div>'); }
   wrap.querySelectorAll('.kteam[data-pick]').forEach(el=>{
     el.addEventListener("click",()=>{ const m=+el.dataset.m, team=el.dataset.team;
       if(KO[m]===team) delete KO[m]; else KO[m]=team; saveKO(); renderBracket(); }); });
@@ -728,13 +761,83 @@ function runSim(N){
 function pcell(p,gold,strong){ const s = p>=99.5?'>99' : (p<=0?'·' : (p<0.5?'<1':Math.round(p)));
   return '<div class="pcell'+(gold?' cgold':'')+(strong?' cstrong':'')+'"><span style="width:'+Math.min(100,p)+'%"></span><i>'+s+'</i></div>'; }
 function fmtPct(frac){ const p=100*frac; return p>=10?Math.round(p)+'%' : p>=1?p.toFixed(1)+'%' : p>0?'<1%':'—'; }
+function buildPredicted(acc){
+  // 用模擬統計，揀每組最可能嘅排序（3×組首＋2×組次＋1×第3出線）
+  const sc=c=>{const a=acc[c]||{};return 3*(a.p1||0)+2*(a.p2||0)+(a.p3q||0);};
+  const order={};
+  for(const g in GROUPS) order[g]=GROUPS[g].slice().sort((a,b)=>sc(b)-sc(a));
+  // 12 組預測第3名，按「以第3名出線」機率排，頭8組出線
+  const th=Object.keys(GROUPS).map(g=>({g,v:(acc[order[g][2]]||{}).p3q||0})).sort((x,y)=>y.v-x.v);
+  const assign=thirdAssign(th.slice(0,8).map(t=>t.g).sort())||{};
+  const seed=src=>{ if(src.W!==undefined)return order[src.W][0];
+    if(src.R!==undefined)return order[src.R][1];
+    if(src.Tt!==undefined){const g=assign[src.Tt];return g?order[g][2]:null;} return null; };
+  const eff=c=>eloOf(c)+(HOSTS[c]?HOST_BOOST:0);
+  const win={}, lose={};
+  Object.keys(KO_MATCHES).map(Number).sort((a,b)=>a-b).forEach(m=>{
+    const ps=KO_MATCHES[m].map(src=>{
+      if(src.MW!==undefined)return win[src.MW]||null;
+      if(src.ML!==undefined)return lose[src.ML]||null;
+      return seed(src); });
+    const a=ps[0],b=ps[1];
+    if(a&&b){ const w=eff(a)>=eff(b)?a:b; win[m]=w; lose[m]= w===a?b:a; }
+  });
+  return {order,assign,win};
+}
+/* ===== 逐圈推演（隨機抽一次完整賽事，一圈一圈開） ===== */
+let STEPN=0;   // 0=未開, 1=小組已抽, 2=32強, 3=16強, 4=8強, 5=4強, 6=決賽
+const STEP_MS={2:R32MS,3:[89,90,91,92,93,94,95,96],4:[97,98,99,100],5:[101,102],6:[104,103]};
+const STEP_NAME={1:'小組賽',2:'32強',3:'16強',4:'8強',5:'4強',6:'決賽'};
+function sampleGroups(){
+  const order={}, thirds=[];
+  for(const g in GROUPS){ const codes=GROUPS[g], matches=[];
+    for(let i=0;i<6;i++){ const r=getR(g,i), H=codes[FIX[i][0]], A=codes[FIX[i][1]];
+      if(r.h!==''&&r.a!=='') matches.push({h:H,a:A,hg:+r.h,ag:+r.a});
+      else { const s=simScore(H,A); matches.push({h:H,a:A,hg:s[0],ag:s[1]}); } }
+    const rk=rankFrom(codes,matches); order[g]=rk.order;
+    const c=rk.order[2], st=rk.st[c]; thirds.push({g,code:c,Pts:st.Pts,GD:st.GD,GF:st.GF}); }
+  thirds.sort((x,y)=> y.Pts-x.Pts||y.GD-x.GD||y.GF-x.GF||T[x.code].r-T[y.code].r);
+  const assign=thirdAssign(thirds.slice(0,8).map(t=>t.g).sort())||{};
+  return {order,assign,win:{},score:{}};
+}
+function sampleKO(a,b){
+  const ea=eloOf(a)+(HOSTS[a]?HOST_BOOST:0), eb=eloOf(b)+(HOSTS[b]?HOST_BOOST:0);
+  const sup=(ea-eb)/100*0.40;
+  let ga=poisson(Math.max(0.15,1.3+sup/2)), gb=poisson(Math.max(0.15,1.3-sup/2)), et=false, pk=false, win;
+  if(ga===gb){ et=true; ga+=poisson(Math.max(0.04,(1.3+sup/2)/3)); gb+=poisson(Math.max(0.04,(1.3-sup/2)/3)); }
+  if(ga>gb) win=a; else if(gb>ga) win=b;
+  else { pk=true; win=Math.random()<1/(1+Math.pow(10,-(ea-eb)/600))?a:b; }
+  return {win, label:ga+'–'+gb+(pk?' PK':et?' AET':'')};
+}
+function genStage(k){
+  if(k===1){ for(const m in KO) delete KO[m]; PRED=sampleGroups(); return; }
+  STEP_MS[k].forEach(m=>{ const ps=KO_MATCHES[m].map(koTeam), a=ps[0], b=ps[1];
+    if(a&&b){ const r=sampleKO(a,b); PRED.win[m]=r.win; (PRED.score||(PRED.score={}))[m]=r.label; } });
+}
+function clearStagesFrom(k){
+  if(k<=1){ PRED=null; return; }
+  for(let j=k;j<=6;j++) (STEP_MS[j]||[]).forEach(m=>{ if(PRED){ delete PRED.win[m]; if(PRED.score) delete PRED.score[m]; } delete KO[m]; });
+}
+function stepStat(msg){ const e=document.getElementById('stepStat'); if(e) e.textContent=msg; }
+function stepDone(){
+  if(STEPN<1){ stepStat('未開始。撳「抽小組賽」。'); return; }
+  if(STEPN<6){ stepStat(STEP_NAME[STEPN]+'抽完 → '+STEP_NAME[STEPN+1]+'對陣已出。撳「開下一圈」或「重抽呢圈」。'); }
+  else { const ch=PRED&&PRED.win[104]; stepStat('決賽抽完！🏆 冠軍：'+(ch?T[ch].zh:'?')+'　（呢個淨係其中一個隨機結果，撳「一次到底」或重抽再睇）'); }
+}
+function stepGroup(){ STEPN=1; genStage(1); renderBracket(); stepDone(); }
+function stepNext(){ if(STEPN<1){ stepGroup(); return; } if(STEPN>=6){ stepDone(); return; } STEPN++; genStage(STEPN); renderBracket(); stepDone(); }
+function stepReroll(){ if(STEPN<1){ stepGroup(); return; } clearStagesFrom(STEPN); genStage(STEPN); renderBracket(); stepDone(); }
+function stepAll(){ if(STEPN<1) stepGroup(); while(STEPN<6){ STEPN++; genStage(STEPN); } renderBracket(); stepDone(); }
+function stepReset(){ STEPN=0; PRED=null; for(const m in KO) delete KO[m]; renderBracket(); stepStat('已清除。撳「抽小組賽」重新開始。'); }
+
 function renderSim(acc,N,ms){
   const D={p1:0,p2:0,p3q:0,r32:0,r16:0,qf:0,sf:0,fin:0,ch:0};
   // 存每隊機率（畀走線格仔用），再重畫走線顯示奪冠機率
   SIMP={};
   for(const g in GROUPS) GROUPS[g].forEach(c=>{ const a=acc[c]||D;
     SIMP[c]={p1:a.p1/N,p2:a.p2/N,p3q:a.p3q/N,r32:a.r32/N,r16:a.r16/N,qf:a.qf/N,sf:a.sf/N,fin:a.fin/N,ch:a.ch/N}; });
-  renderBracket();
+  PRED=PRED; // 唔郁走線：機率表同逐圈推演分開
+  renderBracket();   // 刷新走線格上嘅 % 標籤（如果有揭曉嘅隊）
   const rows=[];
   for(const g in GROUPS) GROUPS[g].forEach(c=>{ const a=acc[c]||D;
     rows.push({c,g,p1:a.p1,p2:a.p2,p3q:a.p3q,r32:a.r32,r16:a.r16,qf:a.qf,sf:a.sf,fin:a.fin,ch:a.ch}); });
@@ -921,6 +1024,11 @@ document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
 }));
 window.addEventListener('resize',()=>{ const v=document.getElementById('v-bracket'); if(v&&v.classList.contains('on')) drawConnectors(); });
 document.getElementById('simRun').addEventListener('click',()=>runSim(+document.getElementById('simN').value));
+document.getElementById('stepGroup').addEventListener('click',stepGroup);
+document.getElementById('stepNext').addEventListener('click',stepNext);
+document.getElementById('stepReroll').addEventListener('click',stepReroll);
+document.getElementById('stepAll').addEventListener('click',stepAll);
+document.getElementById('stepReset').addEventListener('click',stepReset);
 document.getElementById("reset").addEventListener("click",()=>{
   if(confirm("清空全部已輸入賽果？")){ R={}; KO={}; save(); saveKO(); render(); }
 });
