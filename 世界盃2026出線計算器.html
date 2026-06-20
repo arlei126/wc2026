@@ -174,14 +174,18 @@
   .pbarwrap{height:6px;background:var(--panel2);border-radius:3px;overflow:hidden;margin-bottom:12px}
   .pbar{height:100%;width:0;background:var(--acc2);transition:width .12s}
   #simOut{overflow-x:auto}
-  .ptbl{width:100%;border-collapse:collapse;font-size:12.5px;min-width:620px}
+  .ptbl{width:100%;border-collapse:collapse;font-size:12.5px;min-width:840px}
   .ptbl th,.ptbl td{padding:5px 7px;border-bottom:1px solid var(--line);text-align:center}
   .ptbl th{color:var(--mut);font-weight:500;position:sticky;top:0;background:var(--panel)}
+  .ptbl th.grp{color:var(--txt)}
+  .ptbl th.hi{color:var(--green)}
   .ptbl td.l,.ptbl th.l{text-align:left;white-space:nowrap}
   .ptbl tr.qz{background:rgba(46,160,67,.06)}
   .pcell{position:relative;height:18px;background:var(--panel2);border-radius:4px;overflow:hidden;min-width:40px}
   .pcell span{position:absolute;left:0;top:0;bottom:0;background:rgba(31,111,235,.32)}
   .pcell.cgold span{background:rgba(169,121,10,.40)}
+  .pcell.cstrong span{background:rgba(46,160,67,.34)}
+  .pcell.cstrong i{font-weight:700}
   .pcell i{position:relative;font-style:normal;font-size:11px;line-height:18px;color:var(--txt)}
 </style>
 </head>
@@ -227,7 +231,7 @@
     <div class="ov" id="overview"></div>
   </section>
   <section class="view" id="v-bracket">
-    <div class="note"><b>32 強走線</b>：左右兩半向中間決賽收窄，按 FIFA <b>Annex C（495 組合）</b>自動配對。<b>撳隊名</b>揀贏方睇走線。撳下面「<b>計各隊機率</b>」就會用 <b>Elo＋Poisson＋Monte Carlo</b> 跑幾千次，喺每格隊名右邊標出<b>奪冠機率</b>，落面再有完整排序表（晉各圈機率）。已輸入賽果照當真，淨係抽未踢嘅。</div>
+    <div class="note"><b>32 強走線</b>：上面個樹係<b>用目前排名嘅推算陣容</b>（左右兩半向中決賽收窄，撳隊名揀贏方）。但小組未踢完，邊隊真係出線係有機率嘅——撳「<b>計各隊機率</b>」會用 <b>Elo＋Poisson＋Monte Carlo</b> 跑幾千次，<b>下面個表</b>就列出每隊嘅<b>組首／組次／第3名出線／總出線</b>機率（即係「邊隊排第幾、出唔出到線」），再到入8強…奪冠。走線格右上角＝該隊奪冠率。已入賽果照當真，淨係抽未踢。</div>
     <div class="bar" style="margin-bottom:10px">
       <button class="act prim" id="simRun">▶ 計各隊機率</button>
       <select id="simN" class="act">
@@ -692,7 +696,10 @@ function simOnce(acc){
     parts[m]=[a,b];
     winners[m]=(!a||!b)?(a||b):koWinner(a,b);
   }));
-  const hit=(code,k)=>{ if(code){ (acc[code]||(acc[code]={r32:0,r16:0,qf:0,sf:0,fin:0,ch:0}))[k]++; } };
+  const hit=(code,k)=>{ if(code){ (acc[code]||(acc[code]={p1:0,p2:0,p3q:0,r32:0,r16:0,qf:0,sf:0,fin:0,ch:0}))[k]++; } };
+  // 小組出線機率：組首 / 組次 / 第3名出線
+  for(const g in GROUPS){ hit(grpRank[g][0],'p1'); hit(grpRank[g][1],'p2'); }
+  thirds.slice(0,8).forEach(t=>hit(t.code,'p3q'));
   const r32=new Set(); R32MS.forEach(m=>(parts[m]||[]).forEach(x=>x&&r32.add(x)));
   r32.forEach(c=>hit(c,'r32'));
   R32MS.forEach(m=>hit(winners[m],'r16'));
@@ -718,28 +725,32 @@ function runSim(N){
       renderSim(acc,N,ms); }
   })();
 }
-function pcell(p,gold){ const s = p>=99.5?'>99' : (p<=0?'·' : (p<0.5?'<1':Math.round(p)));
-  return '<div class="pcell'+(gold?' cgold':'')+'"><span style="width:'+Math.min(100,p)+'%"></span><i>'+s+'</i></div>'; }
+function pcell(p,gold,strong){ const s = p>=99.5?'>99' : (p<=0?'·' : (p<0.5?'<1':Math.round(p)));
+  return '<div class="pcell'+(gold?' cgold':'')+(strong?' cstrong':'')+'"><span style="width:'+Math.min(100,p)+'%"></span><i>'+s+'</i></div>'; }
 function fmtPct(frac){ const p=100*frac; return p>=10?Math.round(p)+'%' : p>=1?p.toFixed(1)+'%' : p>0?'<1%':'—'; }
 function renderSim(acc,N,ms){
+  const D={p1:0,p2:0,p3q:0,r32:0,r16:0,qf:0,sf:0,fin:0,ch:0};
   // 存每隊機率（畀走線格仔用），再重畫走線顯示奪冠機率
   SIMP={};
-  for(const g in GROUPS) GROUPS[g].forEach(c=>{ const a=acc[c]||{r32:0,r16:0,qf:0,sf:0,fin:0,ch:0};
-    SIMP[c]={r32:a.r32/N,r16:a.r16/N,qf:a.qf/N,sf:a.sf/N,fin:a.fin/N,ch:a.ch/N}; });
+  for(const g in GROUPS) GROUPS[g].forEach(c=>{ const a=acc[c]||D;
+    SIMP[c]={p1:a.p1/N,p2:a.p2/N,p3q:a.p3q/N,r32:a.r32/N,r16:a.r16/N,qf:a.qf/N,sf:a.sf/N,fin:a.fin/N,ch:a.ch/N}; });
   renderBracket();
   const rows=[];
-  for(const g in GROUPS) GROUPS[g].forEach(c=>{ const a=acc[c]||{r32:0,r16:0,qf:0,sf:0,fin:0,ch:0};
-    rows.push({c,g,r32:a.r32,r16:a.r16,qf:a.qf,sf:a.sf,fin:a.fin,ch:a.ch}); });
-  rows.sort((x,y)=> y.ch-x.ch || y.fin-x.fin || y.sf-x.sf || y.qf-x.qf || y.r32-x.r32);
+  for(const g in GROUPS) GROUPS[g].forEach(c=>{ const a=acc[c]||D;
+    rows.push({c,g,p1:a.p1,p2:a.p2,p3q:a.p3q,r32:a.r32,r16:a.r16,qf:a.qf,sf:a.sf,fin:a.fin,ch:a.ch}); });
+  // 先按出線率，再按奪冠率排
+  rows.sort((x,y)=> y.r32-x.r32 || y.ch-x.ch || y.fin-x.fin || y.qf-x.qf);
   const P=v=>100*v/N;
-  let h='<table class="ptbl"><tr><th class="l">#　球隊</th><th>組</th><th>晉32強</th><th>入16強</th><th>入8強</th><th>入4強</th><th>入決賽</th><th>奪冠</th></tr>';
+  let h='<table class="ptbl"><tr><th class="l">#　球隊</th><th>組</th>'
+    +'<th class="grp">組首</th><th class="grp">組次</th><th class="grp">第3出線</th><th class="grp hi">總出線</th>'
+    +'<th>入8強</th><th>入4強</th><th>入決賽</th><th>奪冠</th></tr>';
   rows.forEach((r,i)=>{ h+='<tr class="'+(P(r.r32)>=50?'qz':'')+'"><td class="l">'+(i+1)+'　'+tcell(r.c)+'</td><td>'+r.g+'</td>'
-    +'<td>'+pcell(P(r.r32))+'</td><td>'+pcell(P(r.r16))+'</td><td>'+pcell(P(r.qf))+'</td>'
-    +'<td>'+pcell(P(r.sf))+'</td><td>'+pcell(P(r.fin))+'</td><td>'+pcell(P(r.ch),true)+'</td></tr>'; });
+    +'<td>'+pcell(P(r.p1))+'</td><td>'+pcell(P(r.p2))+'</td><td>'+pcell(P(r.p3q))+'</td><td>'+pcell(P(r.r32),0,1)+'</td>'
+    +'<td>'+pcell(P(r.qf))+'</td><td>'+pcell(P(r.sf))+'</td><td>'+pcell(P(r.fin))+'</td><td>'+pcell(P(r.ch),true)+'</td></tr>'; });
   h+='</table>';
   document.getElementById('simOut').innerHTML=h;
   const stat=document.getElementById('simStat');
-  if(stat) stat.textContent='完成 '+N+' 次（'+(ms/1000).toFixed(1)+'秒）。走線格右邊＝奪冠機率；下表＝晉各圈機率 %。改賽果後要重新計。';
+  if(stat) stat.textContent='完成 '+N+' 次（'+(ms/1000).toFixed(1)+'秒）。小組未踢完，下表頭四欄＝每隊排第幾／出線嘅機率（組首＋組次＋第3出線＝總出線）；後面係淘汰賽各圈。改賽果後要重新計。';
 }
 
 /* ===== 渲染 ===== */
