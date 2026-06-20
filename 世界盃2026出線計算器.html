@@ -14,7 +14,7 @@
   body{margin:0;background:var(--bg);color:var(--txt);
     font-family:"PingFang HK","Microsoft JhengHei","Segoe UI",system-ui,sans-serif;
     font-size:15px;line-height:1.5}
-  header{padding:18px 16px 12px;border-bottom:1px solid var(--line);
+  header{padding:18px 22px 12px;border-bottom:1px solid var(--line);
     position:sticky;top:0;background:var(--bg);z-index:20}
   h1{margin:0;font-size:20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .sub{color:var(--mut);font-size:12.5px;margin-top:4px}
@@ -30,10 +30,12 @@
   button.act.prim:hover{filter:brightness(1.08)}
   .sbbanner{background:#fff6da;border:1px solid #e8d48a;color:#7a5d12;border-radius:8px;
     padding:8px 12px;margin-top:10px;font-size:12.5px;line-height:1.5}
-  main{padding:14px 16px 60px;max-width:1180px;margin:0 auto}
+  main{padding:14px 22px 60px;max-width:none;margin:0 auto}
   .view{display:none}.view.on{display:block}
   /* group grid */
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  @media(max-width:1200px){.grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:680px){.grid{grid-template-columns:1fr}}
   .gcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
   .ghead{padding:9px 12px;background:var(--panel2);font-weight:700;display:flex;
     justify-content:space-between;align-items:center;font-size:14px;cursor:pointer}
@@ -57,9 +59,16 @@
   .mrow{display:flex;align-items:center;gap:6px;padding:3px 0}
   .mrow .h{flex:1;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .mrow .a{flex:1;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .mrow input{width:34px;text-align:center;background:var(--bg);border:1px solid var(--line);
-    color:var(--txt);border-radius:6px;padding:4px 0;font-size:13px}
-  .mrow input:focus{outline:none;border-color:var(--acc2)}
+  .mrow input{width:48px;text-align:center;background:var(--bg);border:1px solid var(--line);
+    color:var(--txt);border-radius:6px;padding:9px 0;font-size:16px}
+  .mrow input:focus{outline:none;border-color:var(--acc2);background:#fffbe6}
+  .mrow input::-webkit-outer-spin-button,.mrow input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .mrow input[type=number]{-moz-appearance:textfield;appearance:textfield}
+  .mclr{flex-shrink:0;width:28px;height:28px;line-height:1;border:1px solid var(--line);
+    background:var(--panel2);color:var(--mut);border-radius:6px;cursor:pointer;font-size:13px;padding:0}
+  .mclr:hover{border-color:var(--red);color:var(--red)}
+  .t3y{color:var(--gold)}
+  .t3n{color:var(--mut)}
   .vs{color:var(--mut);font-size:11px}
   .badge{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;font-weight:600;margin-left:4px}
   .b-q{background:#dcf3e3;color:#157a35;border:1px solid #b6e3c4}
@@ -231,6 +240,7 @@ function mid(g,i){ return g+i; }
 function getR(g,i){ const m=R[mid(g,i)]; return m||{h:"",a:""}; }
 function setR(g,i,side,val){ const k=mid(g,i); if(!R[k])R[k]={h:"",a:""};
   R[k][side]= val===""?"":Math.max(0,parseInt(val,10)||0); save(); render(); }
+function clearMatch(g,i){ delete R[mid(g,i)]; save(); render(); }
 
 /* ===== 排名核心 ===== */
 function blankStat(code){ return {code,P:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,Pts:0}; }
@@ -532,6 +542,7 @@ function renderGroups(){
   const thirdsNow = thirdData();
   const cut3team = thirdsNow.length>=8 ? thirdsNow[7] : null;   // 目前出線尾(第8名第3)
   const cut3 = cut3team ? cut3team.Pts : 0;
+  const top8third = thirdsNow.slice(0,8).map(d=>d.code);        // 目前最佳8隊第3名
   // 本組第3名(P分、得失球gdNow、最後一場lastSign:>0贏 <0輸 0和 undefined=多場未踢) 入唔入最佳8隊 → 直接寫條件
   function qual3(g, third, P, gdNow, lastSign){
     const others = thirdsNow.filter(d=>d.g!==g);      // 其餘11組第3名(已排序)
@@ -567,8 +578,11 @@ function renderGroups(){
       +'<th>得</th><th>失</th><th>差</th><th>分</th></tr>';
     order.forEach((c,i)=>{
       const s=st[c], pc=i===0?"p1":i===1?"p2":i===2?"p3":"";
+      let mk = i===0||i===1 ? ' <b class="t3y">✓</b>'
+             : i===2 ? (top8third.indexOf(c)>=0 ? ' <b class="t3y">✓3名</b>' : ' <b class="t3n">✗</b>')
+             : '';
       h+='<tr class="'+pc+'"><td class="cpos">'+(i+1)+'</td>'
-        +'<td class="tn">'+tcell(c)+'</td><td>'+s.P+'</td><td>'+s.W+'</td><td>'+s.D+'</td><td>'+s.L+'</td>'
+        +'<td class="tn">'+tcell(c)+mk+'</td><td>'+s.P+'</td><td>'+s.W+'</td><td>'+s.D+'</td><td>'+s.L+'</td>'
         +'<td>'+s.GF+'</td><td>'+s.GA+'</td><td>'+(s.GD>0?'+':'')+s.GD+'</td>'
         +'<td class="pts">'+s.Pts+'</td></tr>';
     });
@@ -613,7 +627,8 @@ function renderGroups(){
         +'<input type="number" min="0" inputmode="numeric" data-g="'+g+'" data-i="'+i+'" data-s="h" value="'+r.h+'">'
         +'<span class="vs">:</span>'
         +'<input type="number" min="0" inputmode="numeric" data-g="'+g+'" data-i="'+i+'" data-s="a" value="'+r.a+'">'
-        +'<span class="a">'+tcell(A)+'</span></div>';
+        +'<span class="a">'+tcell(A)+'</span>'
+        +'<button class="mclr" data-g="'+g+'" data-i="'+i+'" title="清除呢場比數">✕</button></div>';
     }
     h+='</div></div>';
   });
@@ -622,6 +637,8 @@ function renderGroups(){
     inp.addEventListener("change",e=>{ const d=e.target.dataset;
       setR(d.g,+d.i,d.s,e.target.value); });
   });
+  wrap.querySelectorAll(".mclr").forEach(b=>b.addEventListener("click",e=>{
+    const d=e.currentTarget.dataset; clearMatch(d.g,+d.i); }));
 }
 /* 收集每組第 3 名 */
 function thirdData(){
