@@ -125,6 +125,23 @@
   .kteam.dim{opacity:.4}
   .kteam .slot{color:var(--mut);font-size:11px}
   .kteam .flag{flex-shrink:0}
+  .kteam .gtag{margin-left:auto;color:var(--mut);font-size:10px;font-weight:600;flex-shrink:0}
+  /* 出線情境鑽入 detail */
+  details.sub{margin:5px 0 2px;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+  details.sub summary{cursor:pointer;font-size:11px;font-weight:600;color:var(--gold);padding:4px 8px;list-style:none}
+  details.sub summary::-webkit-details-marker{display:none}
+  .subbox{padding:4px 8px 8px}
+  .gdgwrap{overflow-x:auto}
+  table.gdg{border-collapse:collapse;margin:6px 0;font-size:11px}
+  table.gdg th,table.gdg td{border:1px solid var(--line);padding:3px 6px;text-align:center;white-space:nowrap}
+  table.gdg th{background:var(--panel2);color:var(--mut);font-weight:600}
+  table.gdg td.gx{background:rgba(46,160,67,.16);color:var(--acc);font-weight:600}
+  table.gdg td.gy{background:rgba(47,109,176,.16);color:var(--blue);font-weight:600}
+  table.gdg td.gt{background:rgba(212,167,44,.14);color:var(--gold)}
+  table.gdg2 th{font-size:11px;line-height:1.25}
+  table.gdg2 th small{font-weight:400;color:var(--mut);font-size:10px}
+  table.gdg2 th.corn{font-size:10.5px;color:var(--mut)}
+  table.gdg2 td{font-size:14px;font-weight:700;min-width:34px;padding:6px 4px}
 </style>
 </head>
 <body>
@@ -358,6 +375,80 @@ function comboText(g,combo){
   });
   return parts.join('，');
 }
+/* ===== 出線情境鑽入詳細（得失球 / 最佳第3名）===== */
+function sgn(n){ return (n>0?'+':'')+n; }
+function remInfoFor(g, combo, code){
+  const codes=GROUPS[g], list=[];
+  Object.keys(combo).map(Number).forEach(i=>{
+    const H=codes[FIX[i][0]], A=codes[FIX[i][1]];
+    if(H!==code && A!==code) return;
+    const home=H===code, res=combo[i];
+    const sign = res==='D'?0 : (((res==='H')===home)?1:-1);
+    list.push({i, oppo: home?A:H, sign});
+  });
+  return list;
+}
+function gdContestDetail(g, combo, contest){
+  const st=buildStats(g);
+  const ab=c=>T[c].zh;                    // 用全名,唔會撞
+  if(contest.length===2){
+    const X=contest[0], Y=contest[1];
+    const rx=remInfoFor(g,combo,X).filter(r=>r.sign!==0);
+    const ry=remInfoFor(g,combo,Y).filter(r=>r.sign!==0);
+    if(rx.length===1 && ry.length===1 && rx[0].i!==ry[0].i){
+      const RX=rx[0], RY=ry[0], CAP=7;
+      const axis=r=>{ const a=[]; for(let k=1;k<=CAP;k++) a.push({d:r.sign*k,lab:(r.sign>0?'勝':'負')+k}); return a; };
+      const ax=axis(RX), ay=axis(RY);
+      let h='<details class="sub"><summary>🔍 睇清楚 '+T[X].zh+' / '+T[Y].zh+' 爭咩</summary><div class="subbox">';
+      h+='<div class="scnote">兩隊對賽分唔出，<b>爭一個出線位</b>，下一級比 <b>總得失球</b>，再平比 <b>總入球</b>。<br>'
+        +T[X].zh+'：現得失球 <b>'+sgn(st[X].GD)+'</b>、入球 '+st[X].GF+'，最後對 '+T[RX.oppo].zh+'（須'+(RX.sign>0?'勝':'負')+'）<br>'
+        +T[Y].zh+'：現得失球 <b>'+sgn(st[Y].GD)+'</b>、入球 '+st[Y].GF+'，最後對 '+T[RY.oppo].zh+'（須'+(RY.sign>0?'勝':'負')+'）</div>';
+      h+='<div class="gdgwrap"><table class="gdg gdg2"><tr><th class="corn">'+ab(X)+' ＼ '+ab(Y)+'</th>';
+      ay.forEach(c=>{ const yg=st[Y].GD+c.d; h+='<th>'+c.lab+'<br><small>'+ab(Y)+' '+sgn(yg)+'</small></th>'; }); h+='</tr>';
+      ax.forEach(rrow=>{ const xg=st[X].GD+rrow.d;
+        h+='<tr><th>'+rrow.lab+'<br><small>'+ab(X)+' '+sgn(xg)+'</small></th>';
+        ay.forEach(c=>{ const yg=st[Y].GD+c.d;
+          let txt,cls;
+          if(xg>yg){ cls='gx'; txt=ab(X); }
+          else if(xg<yg){ cls='gy'; txt=ab(Y); }
+          else { cls='gt'; txt='平'; }
+          h+='<td class="'+cls+'">'+txt+'</td>'; });
+        h+='</tr>'; });
+      h+='</table></div>';
+      h+='<div class="scnote">標題細字＝該隊最後一場打完之後嘅<b>最終總得失球</b>；格仔＝邊隊攞到出線位（小組第2），另一隊跌做第3。「平」即兩隊得失球一樣，要再比總入球（多者出線）。</div>';
+      return h+'</div></details>';
+    }
+  }
+  let h='<details class="sub"><summary>🔍 睇清楚 '+contest.map(c=>T[c].zh).join(' / ')+' 爭咩</summary><div class="subbox"><div class="scnote">'
+    +'呢個情境要比 <b>總得失球 → 總入球</b>。各隊現況（只計已踢）：<br>';
+  contest.forEach(c=>{ const inf=remInfoFor(g,combo,c).map(r=>T[r.oppo].zh+'（'+(r.sign>0?'勝':r.sign<0?'負':'和')+'）').join('、');
+    h+='・'+T[c].zh+'：得失球 '+sgn(st[c].GD)+'、入球 '+st[c].GF+'｜餘賽 '+(inf||'—')+'<br>'; });
+  return h+'入返實際比分就會即刻精準分出。</div></div></details>';
+}
+function thirdContestDetail(g, combo, T3, P){
+  const st=buildStats(g), CAP=7;
+  const inf=remInfoFor(g,combo,T3).filter(r=>r.sign!==0);
+  let gdMin=st[T3].GD, gdMax=st[T3].GD;
+  inf.forEach(r=>{ if(r.sign>0){gdMin+=1;gdMax+=CAP;} else {gdMin-=CAP;gdMax-=1;} });
+  const others=[];
+  Object.keys(GROUPS).forEach(g2=>{ if(g2===g)return; const r=rankGroup(g2), c=r.order[2];
+    others.push({g:g2,code:c,Pts:r.st[c].Pts,GD:r.st[c].GD,GF:r.st[c].GF}); });
+  const rankAmong=gd=>{ const all=others.concat([{g,code:T3,Pts:P,GD:gd,GF:st[T3].GF}]);
+    all.sort((a,b)=> b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||T[a.code].r-T[b.code].r);
+    return all.findIndex(x=>x.code===T3&&x.g===g)+1; };
+  const rBest=rankAmong(gdMax), rWorst=rankAmong(gdMin);
+  let h='<details class="sub"><summary>🔍 睇清楚 '+T[T3].zh+' 爭最佳第3名</summary><div class="subbox"><div class="scnote">';
+  h+='喺呢個情境，'+T[T3].zh+' 係本組第3名，得 <b>'+P+' 分</b>，要全12組第3名跨組比 <b>得分→得失球→入球</b>，頭8名出線。<br>';
+  h+='以目前其他11組第3名計，約排第 <b>'+rBest+'～'+rWorst+'</b> 位'
+    +(rWorst<=8?'（最差都喺出線區 ✓）':rBest>8?'（最好都跌出8名外 ✗）':'（喺出線邊緣，睇得失球）')+'。<br>';
+  if(inf.length) h+='佢最後對 '+T[inf[0].oppo].zh+'（須'+(inf[0].sign>0?'勝':'負')+'），得失球範圍 '+sgn(gdMin)+'～'+sgn(gdMax)+'，贏／輸多啲爬高啲。<br>';
+  h+='<i>註：其他組仲有波未踢，佢哋第3名都會變，呢個只係即時快照。</i></div>';
+  const allNow=others.concat([{g,code:T3,Pts:P,GD:gdMax,GF:st[T3].GF}]).sort((a,b)=> b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF);
+  h+='<table class="gdg"><tr><th>#</th><th>隊</th><th>組</th><th>分</th><th>得失</th></tr>';
+  allNow.slice(0,10).forEach((x,i)=>{ const me=x.code===T3&&x.g===g;
+    h+='<tr'+(me?' class="gx"':'')+'><td>'+(i+1)+'</td><td>'+T[x.code].zh+(me?'（本隊·最佳情況）':'')+'</td><td>'+x.g+'</td><td>'+x.Pts+'</td><td>'+sgn(x.GD)+'</td></tr>'; });
+  return h+'</table></div></details>';
+}
 
 /* ===== 32 強走線 (FIFA Annex C 官方 495 組合) ===== */
 const ANNEXC={"ABCDEFGH":"HGBCAFDE","ABCDEFGI":"CGBDAFEI","ABCDEFGJ":"CGBDAFEJ","ABCDEFGK":"CGBDAFEK","ABCDEFGL":"CGBDAFLE","ABCDEFHI":"HEBCAFDI","ABCDEFHJ":"HJBCAFDE","ABCDEFHK":"HEBCAFDK","ABCDEFHL":"HFBCADLE","ABCDEFIJ":"CJBDAFEI","ABCDEFIK":"CEBDAFIK","ABCDEFIL":"CEBDAFLI","ABCDEFJK":"CJBDAFEK","ABCDEFJL":"CJBDAFLE","ABCDEFKL":"CEBDAFLK","ABCDEGHI":"HGBCADEI","ABCDEGHJ":"HGBCADEJ","ABCDEGHK":"HGBCADEK","ABCDEGHL":"HGBCADLE","ABCDEGIJ":"EGBCADIJ","ABCDEGIK":"EGBCADIK","ABCDEGIL":"EGBCADLI","ABCDEGJK":"EGBCADJK","ABCDEGJL":"EGBCADLJ","ABCDEGKL":"EGBCADLK","ABCDEHIJ":"HJBCADEI","ABCDEHIK":"HEBCADIK","ABCDEHIL":"HEBCADLI","ABCDEHJK":"HJBCADEK","ABCDEHJL":"HJBCADLE","ABCDEHKL":"HEBCADLK","ABCDEIJK":"EJBCADIK","ABCDEIJL":"EJBCADLI","ABCDEIKL":"EIBCADLK","ABCDEJKL":"EJBCADLK","ABCDFGHI":"HGBCAFDI","ABCDFGHJ":"HGBCAFDJ","ABCDFGHK":"HGBCAFDK","ABCDFGHL":"CGBDAFLH","ABCDFGIJ":"CGBDAFIJ","ABCDFGIK":"CGBDAFIK","ABCDFGIL":"CGBDAFLI","ABCDFGJK":"CGBDAFJK","ABCDFGJL":"CGBDAFLJ","ABCDFGKL":"CGBDAFLK","ABCDFHIJ":"HJBCAFDI","ABCDFHIK":"HFBCADIK","ABCDFHIL":"HFBCADLI","ABCDFHJK":"HJBCAFDK","ABCDFHJL":"CJBDAFLH","ABCDFHKL":"HFBCADLK","ABCDFIJK":"CJBDAFIK","ABCDFIJL":"CJBDAFLI","ABCDFIKL":"CIBDAFLK","ABCDFJKL":"CJBDAFLK","ABCDGHIJ":"HGBCADIJ","ABCDGHIK":"HGBCADIK","ABCDGHIL":"HGBCADLI","ABCDGHJK":"HGBCADJK","ABCDGHJL":"HGBCADLJ","ABCDGHKL":"HGBCADLK","ABCDGIJK":"CJBDAGIK","ABCDGIJL":"CJBDAGLI","ABCDGIKL":"IGBCADLK","ABCDGJKL":"CJBDAGLK","ABCDHIJK":"HJBCADIK","ABCDHIJL":"HJBCADLI","ABCDHIKL":"HIBCADLK","ABCDHJKL":"HJBCADLK","ABCDIJKL":"IJBCADLK","ABCEFGHI":"HGBCAFEI","ABCEFGHJ":"HGBCAFEJ","ABCEFGHK":"HGBCAFEK","ABCEFGHL":"HGBCAFLE","ABCEFGIJ":"EGBCAFIJ","ABCEFGIK":"EGBCAFIK","ABCEFGIL":"EGBCAFLI","ABCEFGJK":"EGBCAFJK","ABCEFGJL":"EGBCAFLJ","ABCEFGKL":"EGBCAFLK","ABCEFHIJ":"HJBCAFEI","ABCEFHIK":"HEBCAFIK","ABCEFHIL":"HEBCAFLI","ABCEFHJK":"HJBCAFEK","ABCEFHJL":"HJBCAFLE","ABCEFHKL":"HEBCAFLK","ABCEFIJK":"EJBCAFIK","ABCEFIJL":"EJBCAFLI","ABCEFIKL":"EIBCAFLK","ABCEFJKL":"EJBCAFLK","ABCEGHIJ":"HJBCAGEI","ABCEGHIK":"EGBCAHIK","ABCEGHIL":"EGBCAHLI","ABCEGHJK":"HJBCAGEK","ABCEGHJL":"HJBCAGLE","ABCEGHKL":"EGBCAHLK","ABCEGIJK":"EJBCAGIK","ABCEGIJL":"EJBCAGLI","ABCEGIKL":"EGBAICLK","ABCEGJKL":"EJBCAGLK","ABCEHIJK":"EJBCAHIK","ABCEHIJL":"EJBCAHLI","ABCEHIKL":"EIBCAHLK","ABCEHJKL":"EJBCAHLK","ABCEIJKL":"EJBAICLK","ABCFGHIJ":"HGBCAFIJ","ABCFGHIK":"HGBCAFIK","ABCFGHIL":"HGBCAFLI","ABCFGHJK":"HGBCAFJK","ABCFGHJL":"HGBCAFLJ","ABCFGHKL":"HGBCAFLK","ABCFGIJK":"CJBFAGIK","ABCFGIJL":"CJBFAGLI","ABCFGIKL":"IGBCAFLK","ABCFGJKL":"CJBFAGLK","ABCFHIJK":"HJBCAFIK","ABCFHIJL":"HJBCAFLI","ABCFHIKL":"HIBCAFLK","ABCFHJKL":"HJBCAFLK","ABCFIJKL":"IJBCAFLK","ABCGHIJK":"HJBCAGIK","ABCGHIJL":"HJBCAGLI","ABCGHIKL":"IGBCAHLK","ABCGHJKL":"HJBCAGLK","ABCGIJKL":"IJBCAGLK","ABCHIJKL":"IJBCAHLK","ABDEFGHI":"HGBDAFEI","ABDEFGHJ":"HGBDAFEJ","ABDEFGHK":"HGBDAFEK","ABDEFGHL":"HGBDAFLE","ABDEFGIJ":"EGBDAFIJ","ABDEFGIK":"EGBDAFIK","ABDEFGIL":"EGBDAFLI","ABDEFGJK":"EGBDAFJK","ABDEFGJL":"EGBDAFLJ","ABDEFGKL":"EGBDAFLK","ABDEFHIJ":"HJBDAFEI","ABDEFHIK":"HEBDAFIK","ABDEFHIL":"HEBDAFLI","ABDEFHJK":"HJBDAFEK","ABDEFHJL":"HJBDAFLE","ABDEFHKL":"HEBDAFLK","ABDEFIJK":"EJBDAFIK","ABDEFIJL":"EJBDAFLI","ABDEFIKL":"EIBDAFLK","ABDEFJKL":"EJBDAFLK","ABDEGHIJ":"HJBDAGEI","ABDEGHIK":"EGBDAHIK","ABDEGHIL":"EGBDAHLI","ABDEGHJK":"HJBDAGEK","ABDEGHJL":"HJBDAGLE","ABDEGHKL":"EGBDAHLK","ABDEGIJK":"EJBDAGIK","ABDEGIJL":"EJBDAGLI","ABDEGIKL":"EGBAIDLK","ABDEGJKL":"EJBDAGLK","ABDEHIJK":"EJBDAHIK","ABDEHIJL":"EJBDAHLI","ABDEHIKL":"EIBDAHLK","ABDEHJKL":"EJBDAHLK","ABDEIJKL":"EJBAIDLK","ABDFGHIJ":"HGBDAFIJ","ABDFGHIK":"HGBDAFIK","ABDFGHIL":"HGBDAFLI","ABDFGHJK":"HGBDAFJK","ABDFGHJL":"HGBDAFLJ","ABDFGHKL":"HGBDAFLK","ABDFGIJK":"FJBDAGIK","ABDFGIJL":"FJBDAGLI","ABDFGIKL":"IGBDAFLK","ABDFGJKL":"FJBDAGLK","ABDFHIJK":"HJBDAFIK","ABDFHIJL":"HJBDAFLI","ABDFHIKL":"HIBDAFLK","ABDFHJKL":"HJBDAFLK","ABDFIJKL":"IJBDAFLK","ABDGHIJK":"HJBDAGIK","ABDGHIJL":"HJBDAGLI","ABDGHIKL":"IGBDAHLK","ABDGHJKL":"HJBDAGLK","ABDGIJKL":"IJBDAGLK","ABDHIJKL":"IJBDAHLK","ABEFGHIJ":"HJBFAGEI","ABEFGHIK":"EGBFAHIK","ABEFGHIL":"EGBFAHLI","ABEFGHJK":"HJBFAGEK","ABEFGHJL":"HJBFAGLE","ABEFGHKL":"EGBFAHLK","ABEFGIJK":"EJBFAGIK","ABEFGIJL":"EJBFAGLI","ABEFGIKL":"EGBAIFLK","ABEFGJKL":"EJBFAGLK","ABEFHIJK":"EJBFAHIK","ABEFHIJL":"EJBFAHLI","ABEFHIKL":"EIBFAHLK","ABEFHJKL":"EJBFAHLK","ABEFIJKL":"EJBAIFLK","ABEGHIJK":"EJBAHGIK","ABEGHIJL":"EJBAHGLI","ABEGHIKL":"EGBAIHLK","ABEGHJKL":"EJBAHGLK","ABEGIJKL":"EJBAIGLK","ABEHIJKL":"EJBAIHLK","ABFGHIJK":"HJBFAGIK","ABFGHIJL":"HJBFAGLI","ABFGHIKL":"HGBAIFLK","ABFGHJKL":"HJBFAGLK","ABFGIJKL":"IJBFAGLK","ABFHIJKL":"HJBAIFLK","ABGHIJKL":"HJBAIGLK","ACDEFGHI":"HGECAFDI","ACDEFGHJ":"HGJCAFDE","ACDEFGHK":"HGECAFDK","ACDEFGHL":"HGFCADLE","ACDEFGIJ":"CGJDAFEI","ACDEFGIK":"CGEDAFIK","ACDEFGIL":"CGEDAFLI","ACDEFGJK":"CGJDAFEK","ACDEFGJL":"CGJDAFLE","ACDEFGKL":"CGEDAFLK","ACDEFHIJ":"HJECAFDI","ACDEFHIK":"HEFCADIK","ACDEFHIL":"HEFCADLI","ACDEFHJK":"HJECAFDK","ACDEFHJL":"HJFCADLE","ACDEFHKL":"HEFCADLK","ACDEFIJK":"CJEDAFIK","ACDEFIJL":"CJEDAFLI","ACDEFIKL":"CEIDAFLK","ACDEFJKL":"CJEDAFLK","ACDEGHIJ":"HGJCADEI","ACDEGHIK":"HGECADIK","ACDEGHIL":"HGECADLI","ACDEGHJK":"HGJCADEK","ACDEGHJL":"HGJCADLE","ACDEGHKL":"HGECADLK","ACDEGIJK":"EGJCADIK","ACDEGIJL":"EGJCADLI","ACDEGIKL":"EGICADLK","ACDEGJKL":"EGJCADLK","ACDEHIJK":"HJECADIK","ACDEHIJL":"HJECADLI","ACDEHIKL":"HEICADLK","ACDEHJKL":"HJECADLK","ACDEIJKL":"EJICADLK","ACDFGHIJ":"HGJCAFDI","ACDFGHIK":"HGFCADIK","ACDFGHIL":"HGFCADLI","ACDFGHJK":"HGJCAFDK","ACDFGHJL":"CGJDAFLH","ACDFGHKL":"HGFCADLK","ACDFGIJK":"CGJDAFIK","ACDFGIJL":"CGJDAFLI","ACDFGIKL":"CGIDAFLK","ACDFGJKL":"CGJDAFLK","ACDFHIJK":"HJFCADIK","ACDFHIJL":"HJFCADLI","ACDFHIKL":"HFICADLK","ACDFHJKL":"HJFCADLK","ACDFIJKL":"CJIDAFLK","ACDGHIJK":"HGJCADIK","ACDGHIJL":"HGJCADLI","ACDGHIKL":"HGICADLK","ACDGHJKL":"HGJCADLK","ACDGIJKL":"IGJCADLK","ACDHIJKL":"HJICADLK","ACEFGHIJ":"HGJCAFEI","ACEFGHIK":"HGECAFIK","ACEFGHIL":"HGECAFLI","ACEFGHJK":"HGJCAFEK","ACEFGHJL":"HGJCAFLE","ACEFGHKL":"HGECAFLK","ACEFGIJK":"EGJCAFIK","ACEFGIJL":"EGJCAFLI","ACEFGIKL":"EGICAFLK","ACEFGJKL":"EGJCAFLK","ACEFHIJK":"HJECAFIK","ACEFHIJL":"HJECAFLI","ACEFHIKL":"HEICAFLK","ACEFHJKL":"HJECAFLK","ACEFIJKL":"EJICAFLK","ACEGHIJK":"EGJCAHIK","ACEGHIJL":"EGJCAHLI","ACEGHIKL":"EGICAHLK","ACEGHJKL":"EGJCAHLK","ACEGIJKL":"EJICAGLK","ACEHIJKL":"EJICAHLK","ACFGHIJK":"HGJCAFIK","ACFGHIJL":"HGJCAFLI","ACFGHIKL":"HGICAFLK","ACFGHJKL":"HGJCAFLK","ACFGIJKL":"IGJCAFLK","ACFHIJKL":"HJICAFLK","ACGHIJKL":"HJICAGLK","ADEFGHIJ":"HGJDAFEI","ADEFGHIK":"HGEDAFIK","ADEFGHIL":"HGEDAFLI","ADEFGHJK":"HGJDAFEK","ADEFGHJL":"HGJDAFLE","ADEFGHKL":"HGEDAFLK","ADEFGIJK":"EGJDAFIK","ADEFGIJL":"EGJDAFLI","ADEFGIKL":"EGIDAFLK","ADEFGJKL":"EGJDAFLK","ADEFHIJK":"HJEDAFIK","ADEFHIJL":"HJEDAFLI","ADEFHIKL":"HEIDAFLK","ADEFHJKL":"HJEDAFLK","ADEFIJKL":"EJIDAFLK","ADEGHIJK":"EGJDAHIK","ADEGHIJL":"EGJDAHLI","ADEGHIKL":"EGIDAHLK","ADEGHJKL":"EGJDAHLK","ADEGIJKL":"EJIDAGLK","ADEHIJKL":"EJIDAHLK","ADFGHIJK":"HGJDAFIK","ADFGHIJL":"HGJDAFLI","ADFGHIKL":"HGIDAFLK","ADFGHJKL":"HGJDAFLK","ADFGIJKL":"IGJDAFLK","ADFHIJKL":"HJIDAFLK","ADGHIJKL":"HJIDAGLK","AEFGHIJK":"EGJFAHIK","AEFGHIJL":"EGJFAHLI","AEFGHIKL":"EGIFAHLK","AEFGHJKL":"EGJFAHLK","AEFGIJKL":"EJIFAGLK","AEFHIJKL":"EJIFAHLK","AEGHIJKL":"EJIAHGLK","AFGHIJKL":"HJIFAGLK","BCDEFGHI":"CGBDHFEI","BCDEFGHJ":"HGBCJFDE","BCDEFGHK":"CGBDHFEK","BCDEFGHL":"CGBDHFLE","BCDEFGIJ":"CGBDJFEI","BCDEFGIK":"CGBDEFIK","BCDEFGIL":"CGBDEFLI","BCDEFGJK":"CGBDJFEK","BCDEFGJL":"CGBDJFLE","BCDEFGKL":"CGBDEFLK","BCDEFHIJ":"CJBDHFEI","BCDEFHIK":"CEBDHFIK","BCDEFHIL":"CEBDHFLI","BCDEFHJK":"CJBDHFEK","BCDEFHJL":"CJBDHFLE","BCDEFHKL":"CEBDHFLK","BCDEFIJK":"CJBDEFIK","BCDEFIJL":"CJBDEFLI","BCDEFIKL":"CEBDIFLK","BCDEFJKL":"CJBDEFLK","BCDEGHIJ":"HGBCJDEI","BCDEGHIK":"EGBCHDIK","BCDEGHIL":"EGBCHDLI","BCDEGHJK":"HGBCJDEK","BCDEGHJL":"HGBCJDLE","BCDEGHKL":"EGBCHDLK","BCDEGIJK":"EGBCJDIK","BCDEGIJL":"EGBCJDLI","BCDEGIKL":"EGBCIDLK","BCDEGJKL":"EGBCJDLK","BCDEHIJK":"EJBCHDIK","BCDEHIJL":"EJBCHDLI","BCDEHIKL":"EIBCHDLK","BCDEHJKL":"EJBCHDLK","BCDEIJKL":"EJBCIDLK","BCDFGHIJ":"HGBCJFDI","BCDFGHIK":"CGBDHFIK","BCDFGHIL":"CGBDHFLI","BCDFGHJK":"HGBCJFDK","BCDFGHJL":"CGBDHFLJ","BCDFGHKL":"CGBDHFLK","BCDFGIJK":"CGBDJFIK","BCDFGIJL":"CGBDJFLI","BCDFGIKL":"CGBDIFLK","BCDFGJKL":"CGBDJFLK","BCDFHIJK":"CJBDHFIK","BCDFHIJL":"CJBDHFLI","BCDFHIKL":"CIBDHFLK","BCDFHJKL":"CJBDHFLK","BCDFIJKL":"CJBDIFLK","BCDGHIJK":"HGBCJDIK","BCDGHIJL":"HGBCJDLI","BCDGHIKL":"HGBCIDLK","BCDGHJKL":"HGBCJDLK","BCDGIJKL":"IGBCJDLK","BCDHIJKL":"HJBCIDLK","BCEFGHIJ":"HGBCJFEI","BCEFGHIK":"EGBCHFIK","BCEFGHIL":"EGBCHFLI","BCEFGHJK":"HGBCJFEK","BCEFGHJL":"HGBCJFLE","BCEFGHKL":"EGBCHFLK","BCEFGIJK":"EGBCJFIK","BCEFGIJL":"EGBCJFLI","BCEFGIKL":"EGBCIFLK","BCEFGJKL":"EGBCJFLK","BCEFHIJK":"EJBCHFIK","BCEFHIJL":"EJBCHFLI","BCEFHIKL":"EIBCHFLK","BCEFHJKL":"EJBCHFLK","BCEFIJKL":"EJBCIFLK","BCEGHIJK":"EJBCHGIK","BCEGHIJL":"EJBCHGLI","BCEGHIKL":"EGBCIHLK","BCEGHJKL":"EJBCHGLK","BCEGIJKL":"EJBCIGLK","BCEHIJKL":"EJBCIHLK","BCFGHIJK":"HGBCJFIK","BCFGHIJL":"HGBCJFLI","BCFGHIKL":"HGBCIFLK","BCFGHJKL":"HGBCJFLK","BCFGIJKL":"IGBCJFLK","BCFHIJKL":"HJBCIFLK","BCGHIJKL":"HJBCIGLK","BDEFGHIJ":"HGBDJFEI","BDEFGHIK":"EGBDHFIK","BDEFGHIL":"EGBDHFLI","BDEFGHJK":"HGBDJFEK","BDEFGHJL":"HGBDJFLE","BDEFGHKL":"EGBDHFLK","BDEFGIJK":"EGBDJFIK","BDEFGIJL":"EGBDJFLI","BDEFGIKL":"EGBDIFLK","BDEFGJKL":"EGBDJFLK","BDEFHIJK":"EJBDHFIK","BDEFHIJL":"EJBDHFLI","BDEFHIKL":"EIBDHFLK","BDEFHJKL":"EJBDHFLK","BDEFIJKL":"EJBDIFLK","BDEGHIJK":"EJBDHGIK","BDEGHIJL":"EJBDHGLI","BDEGHIKL":"EGBDIHLK","BDEGHJKL":"EJBDHGLK","BDEGIJKL":"EJBDIGLK","BDEHIJKL":"EJBDIHLK","BDFGHIJK":"HGBDJFIK","BDFGHIJL":"HGBDJFLI","BDFGHIKL":"HGBDIFLK","BDFGHJKL":"HGBDJFLK","BDFGIJKL":"IGBDJFLK","BDFHIJKL":"HJBDIFLK","BDGHIJKL":"HJBDIGLK","BEFGHIJK":"EJBFHGIK","BEFGHIJL":"EJBFHGLI","BEFGHIKL":"EGBFIHLK","BEFGHJKL":"EJBFHGLK","BEFGIJKL":"EJBFIGLK","BEFHIJKL":"EJBFIHLK","BEGHIJKL":"EJIBHGLK","BFGHIJKL":"HJBFIGLK","CDEFGHIJ":"CGJDHFEI","CDEFGHIK":"CGEDHFIK","CDEFGHIL":"CGEDHFLI","CDEFGHJK":"CGJDHFEK","CDEFGHJL":"CGJDHFLE","CDEFGHKL":"CGEDHFLK","CDEFGIJK":"CGEDJFIK","CDEFGIJL":"CGEDJFLI","CDEFGIKL":"CGEDIFLK","CDEFGJKL":"CGEDJFLK","CDEFHIJK":"CJEDHFIK","CDEFHIJL":"CJEDHFLI","CDEFHIKL":"CEIDHFLK","CDEFHJKL":"CJEDHFLK","CDEFIJKL":"CJEDIFLK","CDEGHIJK":"EGJCHDIK","CDEGHIJL":"EGJCHDLI","CDEGHIKL":"EGICHDLK","CDEGHJKL":"EGJCHDLK","CDEGIJKL":"EGICJDLK","CDEHIJKL":"EJICHDLK","CDFGHIJK":"CGJDHFIK","CDFGHIJL":"CGJDHFLI","CDFGHIKL":"CGIDHFLK","CDFGHJKL":"CGJDHFLK","CDFGIJKL":"CGIDJFLK","CDFHIJKL":"CJIDHFLK","CDGHIJKL":"HGICJDLK","CEFGHIJK":"EGJCHFIK","CEFGHIJL":"EGJCHFLI","CEFGHIKL":"EGICHFLK","CEFGHJKL":"EGJCHFLK","CEFGIJKL":"EGICJFLK","CEFHIJKL":"EJICHFLK","CEGHIJKL":"EJICHGLK","CFGHIJKL":"HGICJFLK","DEFGHIJK":"EGJDHFIK","DEFGHIJL":"EGJDHFLI","DEFGHIKL":"EGIDHFLK","DEFGHJKL":"EGJDHFLK","DEFGIJKL":"EGIDJFLK","DEFHIJKL":"EJIDHFLK","DEGHIJKL":"EJIDHGLK","DFGHIJKL":"HGIDJFLK","EFGHIJKL":"EJIFHGLK"};
@@ -401,6 +492,7 @@ function slotLabel(src){
   if(src.ML!==undefined) return 'M'+src.ML+' 負方';
   return '?';
 }
+function groupOf(code){ for(const g in GROUPS){ if(GROUPS[g].indexOf(code)>=0) return g; } return ''; }
 function matchBox(m){
   const ps=KO_MATCHES[m].map(koTeam), win=KO[m];
   let h='<div class="kmatch"><div class="kmno">M'+m+'</div>';
@@ -408,7 +500,7 @@ function matchBox(m){
     const team=ps[idx], known=!!team;
     const sel=win&&team===win?' sel':'';
     const dim=win&&team&&team!==win?' dim':'';
-    const label=known?(flag(team)+'<span>'+T[team].zh+'</span>'):'<span class="slot">'+slotLabel(src)+'</span>';
+    const label=known?(flag(team)+'<span>'+T[team].zh+'</span><span class="gtag">'+groupOf(team)+'組</span>'):'<span class="slot">'+slotLabel(src)+'</span>';
     h+='<div class="kteam'+sel+dim+'"'+(known?' data-pick="1" data-m="'+m+'" data-team="'+team+'"':'')+'>'+label+'</div>';
   });
   return h+'</div>';
@@ -436,19 +528,34 @@ function render(){
 }
 function renderGroups(){
   const wrap=document.getElementById("groups"); let h="";
-  // 各組目前第3名分數(跨組比較最佳第3名用)
-  const thirdPts={};
-  Object.keys(GROUPS).forEach(g=>{ const r=rankGroup(g); thirdPts[g]=r.st[r.order[2]].Pts; });
-  const sortedThird=Object.values(thirdPts).slice().sort((a,b)=>b-a);
-  const cut3 = sortedThird.length>=8 ? sortedThird[7] : 0;   // 第8名分界(暫定)
-  // 一個第3名攞 P 分,同其他組第3名比,睇入唔入到最佳8隊
-  function qual3(g,P){
-    let above=0,eq=0;
-    Object.keys(GROUPS).forEach(g2=>{ if(g2!==g){ const o=thirdPts[g2]; if(o>P)above++; else if(o===P)eq++; }});
-    const best=above+1, worst=above+eq+1;
-    if(worst<=8) return {t:'✓夠分入8強區',c:'b-q'};
-    if(best>8)  return {t:'✗暫時唔夠',c:'b-out'};
-    return {t:'≈睇得失球/其他組',c:'b-live'};
+  // 12 組目前第3名(已排序)，攞嚟做跨組「最佳第3名」分界
+  const thirdsNow = thirdData();
+  const cut3team = thirdsNow.length>=8 ? thirdsNow[7] : null;   // 目前出線尾(第8名第3)
+  const cut3 = cut3team ? cut3team.Pts : 0;
+  // 本組第3名(P分、得失球gdNow、最後一場lastSign:>0贏 <0輸 0和 undefined=多場未踢) 入唔入最佳8隊 → 直接寫條件
+  function qual3(g, third, P, gdNow, lastSign){
+    const others = thirdsNow.filter(d=>d.g!==g);      // 其餘11組第3名(已排序)
+    if(others.length<8) return {t:'✓暫夠',c:'b-q'};
+    const cut = others[7];                             // 第8好嘅其他組第3名 ＝ 要越過嘅線
+    const tg = others.every(d=>d.done) ? '' : '暫';     // 其他組未踢完就標「暫」
+    const L = '分界 '+T[cut.code].zh+'('+cut.g+') '+cut.Pts+'分'+sgn(cut.GD);
+    if(P > cut.Pts) return {t:'✓'+tg+'入｜'+P+'分 > '+L,c:'b-q'};
+    if(P < cut.Pts) return {t:'✗'+tg+'唔入｜'+P+'分 < '+L+'（分數已定）',c:'b-out'};
+    // 同分 → 比總得失球
+    if(lastSign===undefined) return {t:'⚠'+tg+'同分（'+L+'），要睇埋最後幾場得失球',c:'b-live'};
+    if(lastSign===0){
+      if(gdNow>cut.GD) return {t:'✓'+tg+'入｜同分，你得失球'+sgn(gdNow)+' > '+L,c:'b-q'};
+      if(gdNow<cut.GD) return {t:'✗'+tg+'唔入｜同分，你得失球'+sgn(gdNow)+' < '+L,c:'b-out'};
+      return {t:'⚠'+tg+'同分又同得失球('+sgn(gdNow)+')，要比總入球',c:'b-live'};
+    }
+    const need = cut.GD - gdNow + 1;                   // 最終得失球要 > cut.GD
+    if(lastSign>0){
+      if(need<=1) return {t:'✓'+tg+'入｜最後一場贏咗就夠（'+L+'）',c:'b-q'};
+      return {t:'⚠'+tg+'最後一場要淨勝 ≥ '+need+' 球｜同分'+L,c:'b-live'};
+    }
+    const maxLose = gdNow - cut.GD - 1;                // 最多淨負幾多球仲入到
+    if(maxLose<1) return {t:'✗'+tg+'唔入｜要輸波，得失球追唔上'+L,c:'b-out'};
+    return {t:'⚠'+tg+'最後一場淨負 ≤ '+maxLose+' 球先入｜同分'+L,c:'b-live'};
   }
   Object.keys(GROUPS).forEach(g=>{
     const {order,st,played}=rankGroup(g);
@@ -474,17 +581,22 @@ function renderGroups(){
     // 出線情境：精確窮舉
     if(S.n>0){
       h+='<details class="scen"><summary>🔢 出線情境（餘 '+S.n+' 場 · 共 '+S.total+' 種結果）</summary><div class="scbox">';
-      h+='<div class="scnote">📊 跨組「最佳第3名」出線分界：目前約 <b>≥'+cut3+' 分</b>（暫定，會隨其他組更新）。下面每個情境標埋本組第3名夠唔夠分入最佳 8 隊。</div>';
+      h+='<div class="scnote">📊 跨組「最佳第3名」分界：目前出線尾（第8名第3）係 <b>'+(cut3team?T[cut3team.code].zh+'（'+cut3team.g+'組）'+cut3team.Pts+'分'+sgn(cut3team.GD):'未定')+'</b>。下面每個情境直接寫本組第3名夠唔夠、要幾多球先爭得過呢條線（其他組未踢完前會浮動；得失球啱啱相同時再比總入球）。</div>';
       if(S.n<=3){
         S.rows.forEach(row=>{
           const rr=rowResult(row.blocks);
           let out;
           if(rr.clean){
-            const outs=outcomesAll(g,row.combo), pts=ptsOf(GROUPS[g],outs), P=pts[rr.third], q=qual3(g,P);
+            const outs=outcomesAll(g,row.combo), pts=ptsOf(GROUPS[g],outs), P=pts[rr.third];
+            const stp=buildStats(g);
+            const dec=remInfoFor(g,row.combo,rr.third).filter(r=>r.sign!==0);
+            const lastSign = dec.length===1?dec[0].sign:(dec.length===0?0:undefined);
+            const q=qual3(g,rr.third,P,stp[rr.third].GD,lastSign);
             out='<b class="qg">出線：'+T[rr.q[0]].zh+'、'+T[rr.q[1]].zh+'</b> ｜ 第3：'+T[rr.third].zh+' '+P+'分 <span class="badge '+q.c+'">'+q.t+'</span>';
           }
           else { const sure=rr.sure.map(c=>T[c].zh).join('、');
-            out='<b class="qg">出線：'+(sure?sure+' ＋ ':'')+'</b><span class="gd">'+rr.contest.map(c=>T[c].zh).join(' / ')+' 爭（視得失球）</span>'; }
+            out='<b class="qg">出線：'+(sure?sure+' ＋ ':'')+'</b><span class="gd">'+rr.contest.map(c=>T[c].zh).join(' / ')+' 爭（視得失球）</span>';
+            out += gdContestDetail(g,row.combo,rr.contest); }
           h+='<div class="srow"><span class="cond">'+comboText(g,row.combo)+'</span> → '+out+'</div>';
         });
       } else {
