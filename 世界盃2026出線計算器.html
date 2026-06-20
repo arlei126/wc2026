@@ -11,7 +11,7 @@
     --gold:#a9790a; --red:#d23b3b; --blue:#1f6feb; --green:#188a3c;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--txt);
+  body{margin:0;background:var(--bg);color:var(--txt);overflow-x:hidden;
     font-family:"PingFang HK","Microsoft JhengHei","Segoe UI",system-ui,sans-serif;
     font-size:15px;line-height:1.5}
   header{padding:18px 22px 12px;border-bottom:1px solid var(--line);
@@ -119,11 +119,11 @@
   .empty{color:var(--mut);font-size:13px;padding:30px;text-align:center}
   /* 32強走線 */
   .bracket-scroll{overflow-x:auto;padding:4px 2px 12px}
-  .bracket{display:flex;gap:16px;min-width:1360px;align-items:stretch;position:relative}
+  .bracket{display:flex;gap:14px;min-width:1180px;align-items:stretch;position:relative}
   #koSvg{position:absolute;left:0;top:0;pointer-events:none;z-index:0}
   #koSvg path{fill:none;stroke:var(--mut);stroke-width:1.5;opacity:.55}
-  .rnd{position:relative;z-index:1;display:flex;flex-direction:column;justify-content:space-around;gap:10px;min-width:148px;flex:1}
-  .rnd.rndc{flex:0 0 168px;justify-content:center;gap:26px}
+  .rnd{position:relative;z-index:1;display:flex;flex-direction:column;justify-content:space-around;gap:10px;min-width:128px;flex:1}
+  .rnd.rndc{flex:0 0 146px;justify-content:center;gap:26px}
   .rndh{font-size:12.5px;font-weight:700;color:var(--acc2);text-align:center;padding:4px 0;
     border-bottom:2px solid var(--line);margin-bottom:4px}
   .kmatch{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px;position:relative}
@@ -139,7 +139,21 @@
   .kteam .slot{color:var(--mut);font-size:11px}
   .kteam .flag{flex-shrink:0}
   .kteam .gtag{margin-left:auto;color:var(--mut);font-size:10px;font-weight:600;flex-shrink:0}
+  .kteam .knm{display:flex;flex-direction:column;line-height:1.18;min-width:0;overflow:hidden;white-space:nowrap;flex:1}
+  .kteam .knm .kseed{font-size:9px;color:var(--mut);font-weight:400}
   .kteam .ptag{color:var(--gold);font-size:11px;font-weight:700;flex-shrink:0;margin-left:6px;min-width:34px;text-align:right}
+  .bracket-scroll{max-width:100%;-webkit-overflow-scrolling:touch}
+  @media(max-width:680px){
+    .bracket{min-width:1020px;gap:9px}
+    .rnd{min-width:108px;gap:8px}
+    .rnd.rndc{flex:0 0 118px}
+    .kmatch{padding:3px}
+    .kteam{font-size:11px;padding:5px 4px;gap:3px}
+    .kteam .flag{width:17px;height:11px}
+    .kteam .gtag{font-size:9px}
+    .kteam .ptag{font-size:10px;min-width:26px;margin-left:4px}
+    .kmno{font-size:8px}
+  }
   /* 出線情境鑽入 detail */
   details.sub{margin:5px 0 2px;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
   details.sub summary{cursor:pointer;font-size:11px;font-weight:600;color:var(--gold);padding:4px 8px;list-style:none}
@@ -547,6 +561,8 @@ function slotLabel(src){
   return '?';
 }
 function groupOf(code){ for(const g in GROUPS){ if(GROUPS[g].indexOf(code)>=0) return g; } return ''; }
+function seedLabel(c){ const g=groupOf(c); if(!g) return ''; const o=rankGroup(g).order; const i=o.indexOf(c);
+  return g+'組'+(i===0?'首名':i===1?'次名':i===2?'第3名':''); }
 function matchBox(m){
   const ps=KO_MATCHES[m].map(koTeam), win=KO[m];
   let h='<div class="kmatch" data-mm="'+m+'"><div class="kmno">M'+m+'</div>';
@@ -555,7 +571,9 @@ function matchBox(m){
     const sel=win&&team===win?' sel':'';
     const dim=win&&team&&team!==win?' dim':'';
     const ptag=(known&&SIMP&&SIMP[team])?'<span class="ptag">'+fmtPct(SIMP[team].ch)+'</span>':'';
-    const label=known?(flag(team)+'<span>'+T[team].zh+'</span><span class="gtag">'+groupOf(team)+'組</span>'+ptag):'<span class="slot">'+slotLabel(src)+'</span>';
+    const label=known
+      ? flag(team)+'<span class="knm">'+T[team].zh+'<small class="kseed">'+seedLabel(team)+'</small></span>'+ptag
+      : '<span class="slot">'+slotLabel(src)+'</span>';
     h+='<div class="kteam'+sel+dim+'"'+(known?' data-pick="1" data-m="'+m+'" data-team="'+team+'"':'')+'>'+label+'</div>';
   });
   return h+'</div>';
