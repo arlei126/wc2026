@@ -119,11 +119,15 @@
   .empty{color:var(--mut);font-size:13px;padding:30px;text-align:center}
   /* 32強走線 */
   .bracket-scroll{overflow-x:auto;padding:4px 2px 12px}
-  .bracket{display:flex;gap:16px;min-width:940px}
-  .rnd{display:flex;flex-direction:column;justify-content:space-around;gap:10px;min-width:148px;flex:1}
+  .bracket{display:flex;gap:16px;min-width:1360px;align-items:stretch;position:relative}
+  #koSvg{position:absolute;left:0;top:0;pointer-events:none;z-index:0}
+  #koSvg path{fill:none;stroke:var(--mut);stroke-width:1.5;opacity:.55}
+  .rnd{position:relative;z-index:1;display:flex;flex-direction:column;justify-content:space-around;gap:10px;min-width:148px;flex:1}
+  .rnd.rndc{flex:0 0 168px;justify-content:center;gap:26px}
   .rndh{font-size:12.5px;font-weight:700;color:var(--acc2);text-align:center;padding:4px 0;
     border-bottom:2px solid var(--line);margin-bottom:4px}
   .kmatch{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px;position:relative}
+  .rndc .kmatch{border-color:var(--gold)}
   .kmno{position:absolute;top:-7px;left:7px;background:var(--bg);font-size:9px;color:var(--mut);padding:0 4px}
   .kteam{display:flex;align-items:center;gap:5px;padding:6px;font-size:12.5px;border-radius:5px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -135,6 +139,7 @@
   .kteam .slot{color:var(--mut);font-size:11px}
   .kteam .flag{flex-shrink:0}
   .kteam .gtag{margin-left:auto;color:var(--mut);font-size:10px;font-weight:600;flex-shrink:0}
+  .kteam .ptag{color:var(--gold);font-size:11px;font-weight:700;flex-shrink:0;margin-left:6px;min-width:34px;text-align:right}
   /* 出線情境鑽入 detail */
   details.sub{margin:5px 0 2px;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
   details.sub summary{cursor:pointer;font-size:11px;font-weight:600;color:var(--gold);padding:4px 8px;list-style:none}
@@ -151,6 +156,19 @@
   table.gdg2 th small{font-weight:400;color:var(--mut);font-size:10px}
   table.gdg2 th.corn{font-size:10.5px;color:var(--mut)}
   table.gdg2 td{font-size:14px;font-weight:700;min-width:34px;padding:6px 4px}
+  /* 機率預測 */
+  .pbarwrap{height:6px;background:var(--panel2);border-radius:3px;overflow:hidden;margin-bottom:12px}
+  .pbar{height:100%;width:0;background:var(--acc2);transition:width .12s}
+  #simOut{overflow-x:auto}
+  .ptbl{width:100%;border-collapse:collapse;font-size:12.5px;min-width:620px}
+  .ptbl th,.ptbl td{padding:5px 7px;border-bottom:1px solid var(--line);text-align:center}
+  .ptbl th{color:var(--mut);font-weight:500;position:sticky;top:0;background:var(--panel)}
+  .ptbl td.l,.ptbl th.l{text-align:left;white-space:nowrap}
+  .ptbl tr.qz{background:rgba(46,160,67,.06)}
+  .pcell{position:relative;height:18px;background:var(--panel2);border-radius:4px;overflow:hidden;min-width:40px}
+  .pcell span{position:absolute;left:0;top:0;bottom:0;background:rgba(31,111,235,.32)}
+  .pcell.cgold span{background:rgba(169,121,10,.40)}
+  .pcell i{position:relative;font-style:normal;font-size:11px;line-height:18px;color:var(--txt)}
 </style>
 </head>
 <body>
@@ -195,8 +213,19 @@
     <div class="ov" id="overview"></div>
   </section>
   <section class="view" id="v-bracket">
-    <div class="note"><b>32 強走線</b>：每組首名／次名 ＋ 8 個最佳第 3 名，按 FIFA 官方 <b>Annex C（495 種組合）</b>自動配對。<b>撳隊名</b>就可以揀贏方，一路帶去決賽睇走線。小組賽未踢完前係臨時推算（會跟賽果更新）。</div>
+    <div class="note"><b>32 強走線</b>：左右兩半向中間決賽收窄，按 FIFA <b>Annex C（495 組合）</b>自動配對。<b>撳隊名</b>揀贏方睇走線。撳下面「<b>計各隊機率</b>」就會用 <b>Elo＋Poisson＋Monte Carlo</b> 跑幾千次，喺每格隊名右邊標出<b>奪冠機率</b>，落面再有完整排序表（晉各圈機率）。已輸入賽果照當真，淨係抽未踢嘅。</div>
+    <div class="bar" style="margin-bottom:10px">
+      <button class="act prim" id="simRun">▶ 計各隊機率</button>
+      <select id="simN" class="act">
+        <option value="2000">2000 次（快）</option>
+        <option value="5000" selected>5000 次</option>
+        <option value="10000">10000 次（準啲）</option>
+      </select>
+      <span class="sub" id="simStat">未計。撳「計各隊機率」開始。</span>
+    </div>
+    <div class="pbarwrap"><div id="simBar" class="pbar"></div></div>
     <div class="bracket-scroll"><div class="bracket" id="bracket"></div></div>
+    <div class="wrap" id="simOut" style="margin-top:14px"></div>
   </section>
 </main>
 
@@ -239,8 +268,8 @@ function markSaved(){ const s=document.getElementById("saved"); if(!s) return;
 function mid(g,i){ return g+i; }
 function getR(g,i){ const m=R[mid(g,i)]; return m||{h:"",a:""}; }
 function setR(g,i,side,val){ const k=mid(g,i); if(!R[k])R[k]={h:"",a:""};
-  R[k][side]= val===""?"":Math.max(0,parseInt(val,10)||0); save(); render(); }
-function clearMatch(g,i){ delete R[mid(g,i)]; save(); render(); }
+  R[k][side]= val===""?"":Math.max(0,parseInt(val,10)||0); SIMP=null; save(); render(); }
+function clearMatch(g,i){ delete R[mid(g,i)]; SIMP=null; save(); render(); }
 
 /* ===== 排名核心 ===== */
 function blankStat(code){ return {code,P:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,Pts:0}; }
@@ -484,7 +513,22 @@ const ROUNDS=[
  {name:'決賽',ms:[104]},
  {name:'季軍戰',ms:[103]}
 ];
+/* 左右分半走線欄（向中間決賽收窄） */
+const BCOLS=[
+ {name:'32強', ms:[74,77,73,75,83,84,81,82]},
+ {name:'16強', ms:[89,90,93,94]},
+ {name:'8強',  ms:[97,98]},
+ {name:'4強',  ms:[101]},
+ {name:'決賽', ms:[104], center:true},
+ {name:'4強',  ms:[102]},
+ {name:'8強',  ms:[99,100]},
+ {name:'16強', ms:[91,92,95,96]},
+ {name:'32強', ms:[76,78,79,80,86,88,85,87]}
+];
 let KO={}; try{ KO=JSON.parse(localStorage.getItem("wc26ko")||"{}"); }catch(e){ KO={}; }
+let SIMP=null;   // 模擬出嚟嘅每隊機率 {code:{r32..ch (0-1)}}；改賽果會清走
+/* 邊場勝方入邊場（畫連接線用） */
+const PARENT={}; for(const m in KO_MATCHES){ KO_MATCHES[m].forEach(s=>{ if(s.MW!==undefined) PARENT[s.MW]=+m; }); }
 function saveKO(){ try{ if(!sandbox) localStorage.setItem("wc26ko",JSON.stringify(KO)); }catch(e){} }
 function koTeam(src){
   if(src.W!==undefined) return rankGroup(src.W).order[0];
@@ -505,12 +549,13 @@ function slotLabel(src){
 function groupOf(code){ for(const g in GROUPS){ if(GROUPS[g].indexOf(code)>=0) return g; } return ''; }
 function matchBox(m){
   const ps=KO_MATCHES[m].map(koTeam), win=KO[m];
-  let h='<div class="kmatch"><div class="kmno">M'+m+'</div>';
+  let h='<div class="kmatch" data-mm="'+m+'"><div class="kmno">M'+m+'</div>';
   KO_MATCHES[m].forEach((src,idx)=>{
     const team=ps[idx], known=!!team;
     const sel=win&&team===win?' sel':'';
     const dim=win&&team&&team!==win?' dim':'';
-    const label=known?(flag(team)+'<span>'+T[team].zh+'</span><span class="gtag">'+groupOf(team)+'組</span>'):'<span class="slot">'+slotLabel(src)+'</span>';
+    const ptag=(known&&SIMP&&SIMP[team])?'<span class="ptag">'+fmtPct(SIMP[team].ch)+'</span>':'';
+    const label=known?(flag(team)+'<span>'+T[team].zh+'</span><span class="gtag">'+groupOf(team)+'組</span>'+ptag):'<span class="slot">'+slotLabel(src)+'</span>';
     h+='<div class="kteam'+sel+dim+'"'+(known?' data-pick="1" data-m="'+m+'" data-team="'+team+'"':'')+'>'+label+'</div>';
   });
   return h+'</div>';
@@ -521,12 +566,162 @@ function renderBracket(){
   while(changed){ changed=false;
     Object.keys(KO).forEach(m=>{ const ps=KO_MATCHES[m].map(koTeam); if(ps.indexOf(KO[m])<0){ delete KO[m]; changed=true; } }); }
   let h="";
-  ROUNDS.forEach(rd=>{ h+='<div class="rnd"><div class="rndh">'+rd.name+'</div>';
-    rd.ms.forEach(m=>{ h+=matchBox(m); }); h+='</div>'; });
+  BCOLS.forEach(col=>{
+    h+='<div class="rnd'+(col.center?' rndc':'')+'"><div class="rndh">'+col.name+'</div>';
+    col.ms.forEach(m=>{ h+=matchBox(m); });
+    if(col.center){ h+='<div class="rndh" style="margin-top:14px">季軍戰</div>'+matchBox(103); }
+    h+='</div>';
+  });
   wrap.innerHTML=h;
   wrap.querySelectorAll('.kteam[data-pick]').forEach(el=>{
     el.addEventListener("click",()=>{ const m=+el.dataset.m, team=el.dataset.team;
       if(KO[m]===team) delete KO[m]; else KO[m]=team; saveKO(); renderBracket(); }); });
+  (window.requestAnimationFrame||setTimeout)(drawConnectors);
+}
+/* 喺走線盒之間畫 ┐┘ 連接線（SVG 疊圖，跟實際盒位，唔會錯位） */
+function drawConnectors(){
+  const bracket=document.getElementById('bracket');
+  if(!bracket || !bracket.offsetWidth) return;            // 隱藏（未揀呢個 tab）時唔畫
+  const old=document.getElementById('koSvg'); if(old) old.remove();
+  const br=bracket.getBoundingClientRect();
+  const rectOf=m=>{ const el=bracket.querySelector('.kmatch[data-mm="'+m+'"]'); if(!el) return null;
+    const r=el.getBoundingClientRect();
+    return {l:r.left-br.left, r:r.right-br.left, cy:(r.top+r.bottom)/2-br.top}; };
+  let paths='';
+  for(const child in PARENT){
+    const a=rectOf(child), b=rectOf(PARENT[child]); if(!a||!b) continue;
+    let x1,x2;
+    if(a.r<=b.l){ x1=a.r; x2=b.l; }   // child 喺左 → 由右邊出
+    else        { x1=a.l; x2=b.r; }   // child 喺右 → 由左邊出
+    const xm=(x1+x2)/2;
+    paths+='<path d="M'+x1+' '+a.cy+' H'+xm+' V'+b.cy+' H'+x2+'"/>';
+  }
+  const svg='<svg id="koSvg" width="'+bracket.scrollWidth+'" height="'+bracket.scrollHeight+'">'+paths+'</svg>';
+  bracket.insertAdjacentHTML('afterbegin', svg);
+}
+
+/* ===== Elo 評分 + Monte Carlo 機率模擬 =====
+   Elo 以 eloratings.net（2026年6月）做錨，個別細隊用合理估值，可自行更新。 */
+const ELO={
+  ESP:2129,ARG:2128,FRA:2084,ENG:2055,COL:1998,BRA:1978,POR:1967,NED:1944,GER:1939,NOR:1929,
+  JPN:1910,MEX:1896,CRO:1925,ECU:1925,SUI:1895,URU:1888,TUR:1878,SEN:1868,BEL:1850,MAR:1855,
+  USA:1800,KOR:1815,IRN:1800,AUT:1795,SWE:1800,CZE:1795,CIV:1790,EGY:1788,SCO:1790,ALG:1778,
+  CAN:1758,AUS:1735,PAR:1738,TUN:1740,COD:1718,GHA:1720,BIH:1718,UZB:1700,PAN:1675,QAT:1680,
+  RSA:1660,IRQ:1660,JOR:1658,KSA:1648,CPV:1638,HAI:1560,CUW:1560,NZL:1500
+};
+function eloOf(c){ return ELO[c]||1700; }
+const HOSTS={USA:1,MEX:1,CAN:1}, HOST_BOOST=60;   // 主辦國（美墨加）主場加成
+
+/* 由傳入賽果排名（同 rankGroup 一樣嘅 FIFA 拆同分邏輯，但唔讀全域 R） */
+function buildStatsFrom(codes, matches){
+  const st={}; codes.forEach(c=>st[c]=blankStat(c));
+  matches.forEach(m=>{ const H=st[m.h],A=st[m.a]; H.P++;A.P++;
+    H.GF+=m.hg;H.GA+=m.ag;A.GF+=m.ag;A.GA+=m.hg;
+    if(m.hg>m.ag){H.W++;A.L++;H.Pts+=3;} else if(m.hg<m.ag){A.W++;H.L++;A.Pts+=3;} else {H.D++;A.D++;H.Pts++;A.Pts++;} });
+  codes.forEach(c=>st[c].GD=st[c].GF-st[c].GA);
+  return st;
+}
+function rankFrom(codes, matches){
+  const st=buildStatsFrom(codes,matches);
+  const arr=codes.slice().sort((x,y)=>st[y].Pts-st[x].Pts);
+  const runs=[]; let cur=[arr[0]];
+  for(let i=1;i<arr.length;i++){ if(st[arr[i]].Pts===st[arr[i-1]].Pts)cur.push(arr[i]); else{runs.push(cur);cur=[arr[i]];}}
+  runs.push(cur); let order=[];
+  runs.forEach(run=>order=order.concat(run.length===1?run:breakTie(run,st,matches)));
+  return {order,st};
+}
+function poisson(l){ const L=Math.exp(-l); let k=0,p=1; do{k++;p*=Math.random();}while(p>L); return k-1; }
+/* 一場波抽比數（Elo 差 → 入球期望 → Poisson） */
+function simScore(a,b){
+  const ea=eloOf(a)+(HOSTS[a]?HOST_BOOST:0), eb=eloOf(b)+(HOSTS[b]?HOST_BOOST:0);
+  const sup=(ea-eb)/100*0.40, base=2.6;
+  return [poisson(Math.max(0.15,base/2+sup/2)), poisson(Math.max(0.15,base/2-sup/2))];
+}
+/* 淘汰賽：90分鐘 → 加時(1/3 入球率) → 十二碼(Elo 輕微加權) */
+function koWinner(a,b){
+  const ea=eloOf(a)+(HOSTS[a]?HOST_BOOST:0), eb=eloOf(b)+(HOSTS[b]?HOST_BOOST:0);
+  const sup=(ea-eb)/100*0.40;
+  let ga=poisson(Math.max(0.15,1.3+sup/2)), gb=poisson(Math.max(0.15,1.3-sup/2));
+  if(ga===gb){ ga+=poisson(Math.max(0.04,(1.3+sup/2)/3)); gb+=poisson(Math.max(0.04,(1.3-sup/2)/3)); }
+  if(ga>gb)return a; if(gb>ga)return b;
+  return Math.random() < 1/(1+Math.pow(10,-(ea-eb)/600)) ? a : b;   // 十二碼
+}
+const R32MS=[73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88];
+/* 跑一次完整賽事，累加每隊到達各階段嘅次數入 acc */
+function simOnce(acc){
+  const grpRank={}, thirds=[];
+  for(const g in GROUPS){
+    const codes=GROUPS[g], matches=[];
+    for(let i=0;i<6;i++){ const r=getR(g,i), H=codes[FIX[i][0]], A=codes[FIX[i][1]];
+      if(r.h!==""&&r.a!=="") matches.push({h:H,a:A,hg:+r.h,ag:+r.a});
+      else { const s=simScore(H,A); matches.push({h:H,a:A,hg:s[0],ag:s[1]}); } }
+    const rk=rankFrom(codes,matches); grpRank[g]=rk.order;
+    const c=rk.order[2], s=rk.st[c]; thirds.push({g,code:c,Pts:s.Pts,GD:s.GD,GF:s.GF});
+  }
+  thirds.sort((x,y)=> y.Pts-x.Pts||y.GD-x.GD||y.GF-x.GF||T[x.code].r-T[y.code].r);
+  const assign=thirdAssign(thirds.slice(0,8).map(t=>t.g).sort()) || {};
+  const winners={}, parts={};
+  const resolve=src=>{
+    if(src.W!==undefined) return grpRank[src.W][0];
+    if(src.R!==undefined) return grpRank[src.R][1];
+    if(src.Tt!==undefined){ const g=assign[src.Tt]; return g?grpRank[g][2]:null; }
+    if(src.MW!==undefined) return winners[src.MW];
+    if(src.ML!==undefined){ const p=parts[src.ML]; return p?(p[0]===winners[src.ML]?p[1]:p[0]):null; }
+    return null;
+  };
+  ROUNDS.forEach(rd=>rd.ms.forEach(m=>{
+    const a=resolve(KO_MATCHES[m][0]), b=resolve(KO_MATCHES[m][1]);
+    parts[m]=[a,b];
+    winners[m]=(!a||!b)?(a||b):koWinner(a,b);
+  }));
+  const hit=(code,k)=>{ if(code){ (acc[code]||(acc[code]={r32:0,r16:0,qf:0,sf:0,fin:0,ch:0}))[k]++; } };
+  const r32=new Set(); R32MS.forEach(m=>(parts[m]||[]).forEach(x=>x&&r32.add(x)));
+  r32.forEach(c=>hit(c,'r32'));
+  R32MS.forEach(m=>hit(winners[m],'r16'));
+  [89,90,91,92,93,94,95,96].forEach(m=>hit(winners[m],'qf'));
+  [97,98,99,100].forEach(m=>hit(winners[m],'sf'));
+  [101,102].forEach(m=>hit(winners[m],'fin'));
+  hit(winners[104],'ch');
+}
+let simRunning=false;
+function runSim(N){
+  if(simRunning) return; simRunning=true;
+  const acc={}; let done=0; const t0=(performance&&performance.now)?performance.now():Date.now();
+  const btn=document.getElementById('simRun'), bar=document.getElementById('simBar'), stat=document.getElementById('simStat');
+  if(btn) btn.disabled=true;
+  (function chunk(){
+    const end=Math.min(done+400,N);
+    for(;done<end;done++) simOnce(acc);
+    if(bar) bar.style.width=Math.round(done/N*100)+'%';
+    if(stat) stat.textContent='模擬中… '+done+' / '+N;
+    if(done<N) setTimeout(chunk,0);
+    else { simRunning=false; if(btn)btn.disabled=false;
+      const ms=((performance&&performance.now)?performance.now():Date.now())-t0;
+      renderSim(acc,N,ms); }
+  })();
+}
+function pcell(p,gold){ const s = p>=99.5?'>99' : (p<=0?'·' : (p<0.5?'<1':Math.round(p)));
+  return '<div class="pcell'+(gold?' cgold':'')+'"><span style="width:'+Math.min(100,p)+'%"></span><i>'+s+'</i></div>'; }
+function fmtPct(frac){ const p=100*frac; return p>=10?Math.round(p)+'%' : p>=1?p.toFixed(1)+'%' : p>0?'<1%':'—'; }
+function renderSim(acc,N,ms){
+  // 存每隊機率（畀走線格仔用），再重畫走線顯示奪冠機率
+  SIMP={};
+  for(const g in GROUPS) GROUPS[g].forEach(c=>{ const a=acc[c]||{r32:0,r16:0,qf:0,sf:0,fin:0,ch:0};
+    SIMP[c]={r32:a.r32/N,r16:a.r16/N,qf:a.qf/N,sf:a.sf/N,fin:a.fin/N,ch:a.ch/N}; });
+  renderBracket();
+  const rows=[];
+  for(const g in GROUPS) GROUPS[g].forEach(c=>{ const a=acc[c]||{r32:0,r16:0,qf:0,sf:0,fin:0,ch:0};
+    rows.push({c,g,r32:a.r32,r16:a.r16,qf:a.qf,sf:a.sf,fin:a.fin,ch:a.ch}); });
+  rows.sort((x,y)=> y.ch-x.ch || y.fin-x.fin || y.sf-x.sf || y.qf-x.qf || y.r32-x.r32);
+  const P=v=>100*v/N;
+  let h='<table class="ptbl"><tr><th class="l">#　球隊</th><th>組</th><th>晉32強</th><th>入16強</th><th>入8強</th><th>入4強</th><th>入決賽</th><th>奪冠</th></tr>';
+  rows.forEach((r,i)=>{ h+='<tr class="'+(P(r.r32)>=50?'qz':'')+'"><td class="l">'+(i+1)+'　'+tcell(r.c)+'</td><td>'+r.g+'</td>'
+    +'<td>'+pcell(P(r.r32))+'</td><td>'+pcell(P(r.r16))+'</td><td>'+pcell(P(r.qf))+'</td>'
+    +'<td>'+pcell(P(r.sf))+'</td><td>'+pcell(P(r.fin))+'</td><td>'+pcell(P(r.ch),true)+'</td></tr>'; });
+  h+='</table>';
+  document.getElementById('simOut').innerHTML=h;
+  const stat=document.getElementById('simStat');
+  if(stat) stat.textContent='完成 '+N+' 次（'+(ms/1000).toFixed(1)+'秒）。走線格右邊＝奪冠機率；下表＝晉各圈機率 %。改賽果後要重新計。';
 }
 
 /* ===== 渲染 ===== */
@@ -587,11 +782,24 @@ function renderGroups(){
         +'<td class="pts">'+s.Pts+'</td></tr>';
     });
     h+='</table>';
+    // 賽程輸入（緊貼排名下面，位置固定；下面嘅標籤／情境點變都唔會推郁啲輸入格）
+    h+='<div class="fixt">';
+    for(let i=0;i<6;i++){
+      const codes=GROUPS[g], H=codes[FIX[i][0]], A=codes[FIX[i][1]], r=getR(g,i);
+      if(i%2===0) h+='<div class="md">'+MDNAME[i]+'</div>';
+      h+='<div class="mrow"><span class="h">'+tcell(H)+'</span>'
+        +'<input type="number" min="0" inputmode="numeric" data-g="'+g+'" data-i="'+i+'" data-s="h" value="'+r.h+'">'
+        +'<span class="vs">:</span>'
+        +'<input type="number" min="0" inputmode="numeric" data-g="'+g+'" data-i="'+i+'" data-s="a" value="'+r.a+'">'
+        +'<span class="a">'+tcell(A)+'</span>'
+        +'<button class="mclr" data-g="'+g+'" data-i="'+i+'" title="清除呢場比數">✕</button></div>';
+    }
+    h+='</div>';
     // 狀態標籤（只列有定論嘅）
     let chips="";
     order.forEach(c=>{ const sb=S.status[c]; if(sb.badge && sb.badge!=='出線未定'){
       chips+='<span class="schip '+sb.cls+'">'+flag(c)+T[c].zh+' '+sb.badge+'</span>'; }});
-    if(chips) h+='<div class="chips">'+chips+'</div>';
+    if(chips) h+='<div class="chips" style="padding:8px 10px 2px">'+chips+'</div>';
     // 出線情境：精確窮舉
     if(S.n>0){
       h+='<details class="scen"><summary>🔢 出線情境（餘 '+S.n+' 場 · 共 '+S.total+' 種結果）</summary><div class="scbox">';
@@ -618,19 +826,7 @@ function renderGroups(){
       }
       h+='</div></details>';
     }
-    // 賽程輸入
-    h+='<div class="fixt">';
-    for(let i=0;i<6;i++){
-      const codes=GROUPS[g], H=codes[FIX[i][0]], A=codes[FIX[i][1]], r=getR(g,i);
-      if(i%2===0) h+='<div class="md">'+MDNAME[i]+'</div>';
-      h+='<div class="mrow"><span class="h">'+tcell(H)+'</span>'
-        +'<input type="number" min="0" inputmode="numeric" data-g="'+g+'" data-i="'+i+'" data-s="h" value="'+r.h+'">'
-        +'<span class="vs">:</span>'
-        +'<input type="number" min="0" inputmode="numeric" data-g="'+g+'" data-i="'+i+'" data-s="a" value="'+r.a+'">'
-        +'<span class="a">'+tcell(A)+'</span>'
-        +'<button class="mclr" data-g="'+g+'" data-i="'+i+'" title="清除呢場比數">✕</button></div>';
-    }
-    h+='</div></div>';
+    h+='</div>';
   });
   wrap.innerHTML=h;
   wrap.querySelectorAll("input").forEach(inp=>{
@@ -692,7 +888,10 @@ document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
   document.querySelectorAll(".view").forEach(x=>x.classList.remove("on"));
   t.classList.add("on"); document.getElementById("v-"+t.dataset.v).classList.add("on");
+  if(t.dataset.v==='bracket') (window.requestAnimationFrame||setTimeout)(drawConnectors);
 }));
+window.addEventListener('resize',()=>{ const v=document.getElementById('v-bracket'); if(v&&v.classList.contains('on')) drawConnectors(); });
+document.getElementById('simRun').addEventListener('click',()=>runSim(+document.getElementById('simN').value));
 document.getElementById("reset").addEventListener("click",()=>{
   if(confirm("清空全部已輸入賽果？")){ R={}; KO={}; save(); saveKO(); render(); }
 });
