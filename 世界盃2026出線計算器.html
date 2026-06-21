@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-HK">
 <head>
@@ -78,18 +77,24 @@
   .b-live{background:#efe6fb;color:#7c4dd0;border:1px solid #ddccf3}
   .hint{font-size:11.5px;color:var(--mut);padding:2px 12px 8px;line-height:1.45}
   .hint b{color:var(--acc)}
-  details.scen{margin:0 10px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel2)}
-  details.scen summary{cursor:pointer;font-size:12px;font-weight:600;color:var(--acc2);padding:7px 10px;list-style:none}
-  details.scen summary::-webkit-details-marker{display:none}
-  details.scen summary::before{content:"▸ ";color:var(--mut)}
-  details.scen[open] summary::before{content:"▾ "}
-  .scbox{padding:2px 10px 9px;max-height:280px;overflow:auto}
-  .srow{font-size:11.5px;padding:4px 0;border-bottom:1px dashed var(--line);line-height:1.5}
+  /* 出線情境（按鈕 + 彈出視窗） */
+  .scenbtn{display:block;width:calc(100% - 20px);margin:0 10px 10px;padding:8px 10px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--acc2);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;text-align:left}
+  .scenbtn:hover{border-color:var(--acc2)}
+  .modal{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;
+    background:rgba(13,17,23,.5);padding:18px}
+  .modalbox{background:var(--panel);border:1px solid var(--line);border-radius:12px;max-width:600px;
+    width:100%;max-height:84vh;overflow:auto;padding:16px 18px 18px;position:relative;box-shadow:0 14px 44px rgba(0,0,0,.28)}
+  .modalbox h3{margin:0 28px 10px 0;font-size:16px;color:var(--acc2)}
+  .mclose{position:absolute;top:10px;right:10px;width:30px;height:30px;border:1px solid var(--line);
+    background:var(--panel2);border-radius:8px;cursor:pointer;font-size:14px;color:var(--mut);line-height:1}
+  .mclose:hover{border-color:var(--red);color:var(--red)}
+  .srow{font-size:12px;padding:6px 0;border-bottom:1px dashed var(--line);line-height:1.55}
   .srow:last-child{border-bottom:none}
   .srow .cond{color:var(--mut)}
   .srow .qg{color:var(--acc)}
   .srow .gd{color:var(--gold)}
-  .scnote{font-size:11.5px;color:var(--mut);line-height:1.5;padding:4px 0}
+  .scnote{font-size:12px;color:var(--mut);line-height:1.55;padding:4px 0}
   /* third table */
   .wrap{overflow-x:auto}
   .big{width:100%;border-collapse:collapse;min-width:560px}
@@ -119,7 +124,7 @@
   details.rules div{font-size:12.5px;color:var(--mut);padding:8px 4px;line-height:1.6}
   .empty{color:var(--mut);font-size:13px;padding:30px;text-align:center}
   /* 32強走線 */
-  .bracket-scroll{overflow-x:auto;padding:4px 2px 12px}
+  .bracket-scroll{overflow-x:auto;padding:4px 2px 12px;max-width:100%;-webkit-overflow-scrolling:touch}
   .bracket{display:flex;gap:14px;min-width:1180px;align-items:stretch;position:relative}
   #koSvg{position:absolute;left:0;top:0;pointer-events:none;z-index:0}
   #brktOv{position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;
@@ -148,7 +153,6 @@
   .kteam .knm{display:flex;flex-direction:column;line-height:1.18;min-width:0;overflow:hidden;white-space:nowrap;flex:1}
   .kteam .knm .kseed{font-size:9px;color:var(--mut);font-weight:400}
   .kteam .ptag{color:#3fb95a;font-size:11px;font-weight:700;flex-shrink:0;margin-left:6px;min-width:34px;text-align:right}
-  .bracket-scroll{max-width:100%;-webkit-overflow-scrolling:touch}
   @media(max-width:680px){
     .bracket{min-width:1020px;gap:9px}
     .rnd{min-width:108px;gap:8px}
@@ -161,7 +165,7 @@
     .kmno{font-size:8px}
   }
   /* 出線情境鑽入 detail */
-  details.sub{margin:5px 0 2px;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+  details.sub{margin:5px 0 2px;border:1px solid var(--line);border-radius:6px;background:var(--panel2)}
   details.sub summary{cursor:pointer;font-size:11px;font-weight:600;color:var(--gold);padding:4px 8px;list-style:none}
   details.sub summary::-webkit-details-marker{display:none}
   .subbox{padding:4px 8px 8px}
@@ -225,7 +229,6 @@
   </div>
   </details>
 </header>
-
 <main>
   <section class="view on" id="v-groups"><div class="grid" id="groups"></div></section>
   <section class="view" id="v-third">
@@ -237,7 +240,7 @@
     <div class="ov" id="overview"></div>
   </section>
   <section class="view" id="v-bracket">
-    <div class="note"><b>32 強走線</b>：撳「<b>逐圈推演</b>」一圈一圈開——先<b>抽小組賽出 32強對陣</b>，再撳「開下一圈」逐步開 16強→8強→4強→決賽→冠軍（每圈隨機，唔啱可「重抽呢圈」）。已入賽果照當真，淨係抽未踢嘅。想睇每隊嘅<b>組首／組次／第3出線／總出線</b>機率，撳下面「<b>計各隊出線機率</b>」跑幾千次出個表（同走線分開，唔會填爆個樹）。</div>
+    <div class="note"><b>32 強走線</b>：撳「<b>逐圈推演</b>」一圈一圈開——先<b>抽小組賽出 32強對陣</b>，再撳「開下一圈」逐步開 16強→8強→4強→決賽→冠軍（每圈按實力加權隨機，唔啱可「重抽呢圈」）。已入賽果照當真，淨係抽未踢嘅。想睇每隊嘅<b>組首／組次／第3出線／總出線</b>機率，撳下面「<b>計各隊出線機率</b>」跑幾千次出個表（同走線分開，唔會填爆個樹）。</div>
     <div class="bar" id="stepBar" style="margin:4px 0 8px;flex-wrap:wrap">
       <b style="color:var(--txt);font-size:13px">🎲 逐圈推演：</b>
       <button class="act prim" id="stepGroup">① 抽小組賽（出32強）</button>
@@ -261,7 +264,7 @@
     <div class="wrap" id="simOut" style="margin-top:14px"></div>
   </section>
 </main>
-
+<div id="scenModal" class="modal" style="display:none"><div class="modalbox"><button class="mclose" id="scenClose">✕</button><div id="scenBody"></div></div></div>
 <script>
 /* ===== 隊伍資料 ===== */
 const T = {
@@ -288,7 +291,6 @@ const GROUPS = {
 /* 賽程模式（位置索引）：MD1 0v1,2v3 ; MD2 0v2,3v1 ; MD3 3v0,1v2 */
 const FIX = [ [0,1],[2,3], [0,2],[3,1], [3,0],[1,2] ];
 const MDNAME = ["第 1 輪","第 1 輪","第 2 輪","第 2 輪","第 3 輪","第 3 輪"];
-
 /* ===== 賽果儲存 ===== */
 let R = {};
 let sandbox = false;   // 試算模式:開咗就唔會寫入儲存
@@ -303,7 +305,6 @@ function getR(g,i){ const m=R[mid(g,i)]; return m||{h:"",a:""}; }
 function setR(g,i,side,val){ const k=mid(g,i); if(!R[k])R[k]={h:"",a:""};
   R[k][side]= val===""?"":Math.max(0,parseInt(val,10)||0); SIMP=null; PRED=null; STEPN=0; save(); render(); }
 function clearMatch(g,i){ delete R[mid(g,i)]; SIMP=null; PRED=null; STEPN=0; save(); render(); }
-
 /* ===== 排名核心 ===== */
 function blankStat(code){ return {code,P:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,Pts:0}; }
 function groupMatches(g){ // 已踢嘅場 [{h,a,hg,ag}]
@@ -367,11 +368,7 @@ function rankGroup(g){
   runs.forEach(run=> order = order.concat(run.length===1?run:breakTie(run, st, matches)) );
   return {order, st, played:matches.length};
 }
-
-/* ===== 出線情境：精確窮舉每個比賽結果 =====
-   原理：列舉所有「餘下比賽 勝/和/負」組合（3^N）。每個組合用『得分 → 對賽得分』
-   判前後（呢兩級淨係靠勝/和/負就計到，唔使知比數）。若得分同對賽得分都打平，
-   就要睇實際得失球先分到，會標示「視得失球」。 */
+/* ===== 出線情境：精確窮舉每個比賽結果 ===== */
 function outcomesAll(g, combo){ // 全 6 場結果（已踢用實際，餘下用 combo）
   const codes=GROUPS[g], out=[];
   for(let i=0;i<6;i++){ const r=getR(g,i); let res=null;
@@ -385,7 +382,7 @@ function ptsOf(codes,outs){ const p={}; codes.forEach(c=>p[c]=0);
 function hthOf(set,outs){ const p={}; set.forEach(c=>p[c]=0);
   outs.forEach(o=>{ if(set.indexOf(o.h)>=0&&set.indexOf(o.a)>=0){
     if(o.res==='H')p[o.h]+=3; else if(o.res==='A')p[o.a]+=3; else {p[o.h]++;p[o.a]++;} }}); return p; }
-function blocksOf(codes,outs){ // 排好序嘅 block；gdDep=true 即仍要睇得失球先分到
+function blocksOf(codes,outs){
   const pts=ptsOf(codes,outs);
   const arr=codes.slice().sort((a,b)=>pts[b]-pts[a]);
   const blocks=[]; let i=0;
@@ -428,7 +425,6 @@ function groupScenario(g){
     status[c]={badge,cls}; });
   return {rem,n,total,rows,status};
 }
-/* 把一個組合嘅 block 化成「出線兩隊 / 第3」 */
 function rowResult(blocks){
   const flat=[]; blocks.forEach(b=>b.codes.forEach(c=>flat.push({c,b})));
   const cutClean = flat[1].b!==flat[2].b;
@@ -436,7 +432,6 @@ function rowResult(blocks){
   const blk=flat[1].b, above=[]; for(const b of blocks){ if(b===blk)break; b.codes.forEach(c=>above.push(c)); }
   return {clean:false, sure:above, contest:blk.codes};
 }
-/* 把 combo 嘅每場結果寫成文字 */
 function comboText(g,combo){
   const codes=GROUPS[g], parts=[];
   Object.keys(combo).map(Number).sort((a,b)=>a-b).forEach(i=>{
@@ -462,7 +457,7 @@ function remInfoFor(g, combo, code){
 }
 function gdContestDetail(g, combo, contest){
   const st=buildStats(g);
-  const ab=c=>T[c].zh;                    // 用全名,唔會撞
+  const ab=c=>T[c].zh;
   if(contest.length===2){
     const X=contest[0], Y=contest[1];
     const rx=remInfoFor(g,combo,X).filter(r=>r.sign!==0);
@@ -497,31 +492,6 @@ function gdContestDetail(g, combo, contest){
     h+='・'+T[c].zh+'：得失球 '+sgn(st[c].GD)+'、入球 '+st[c].GF+'｜餘賽 '+(inf||'—')+'<br>'; });
   return h+'入返實際比分就會即刻精準分出。</div></div></details>';
 }
-function thirdContestDetail(g, combo, T3, P){
-  const st=buildStats(g), CAP=7;
-  const inf=remInfoFor(g,combo,T3).filter(r=>r.sign!==0);
-  let gdMin=st[T3].GD, gdMax=st[T3].GD;
-  inf.forEach(r=>{ if(r.sign>0){gdMin+=1;gdMax+=CAP;} else {gdMin-=CAP;gdMax-=1;} });
-  const others=[];
-  Object.keys(GROUPS).forEach(g2=>{ if(g2===g)return; const r=rankGroup(g2), c=r.order[2];
-    others.push({g:g2,code:c,Pts:r.st[c].Pts,GD:r.st[c].GD,GF:r.st[c].GF}); });
-  const rankAmong=gd=>{ const all=others.concat([{g,code:T3,Pts:P,GD:gd,GF:st[T3].GF}]);
-    all.sort((a,b)=> b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||T[a.code].r-T[b.code].r);
-    return all.findIndex(x=>x.code===T3&&x.g===g)+1; };
-  const rBest=rankAmong(gdMax), rWorst=rankAmong(gdMin);
-  let h='<details class="sub"><summary>🔍 睇清楚 '+T[T3].zh+' 爭最佳第3名</summary><div class="subbox"><div class="scnote">';
-  h+='喺呢個情境，'+T[T3].zh+' 係本組第3名，得 <b>'+P+' 分</b>，要全12組第3名跨組比 <b>得分→得失球→入球</b>，頭8名出線。<br>';
-  h+='以目前其他11組第3名計，約排第 <b>'+rBest+'～'+rWorst+'</b> 位'
-    +(rWorst<=8?'（最差都喺出線區 ✓）':rBest>8?'（最好都跌出8名外 ✗）':'（喺出線邊緣，睇得失球）')+'。<br>';
-  if(inf.length) h+='佢最後對 '+T[inf[0].oppo].zh+'（須'+(inf[0].sign>0?'勝':'負')+'），得失球範圍 '+sgn(gdMin)+'～'+sgn(gdMax)+'，贏／輸多啲爬高啲。<br>';
-  h+='<i>註：其他組仲有波未踢，佢哋第3名都會變，呢個只係即時快照。</i></div>';
-  const allNow=others.concat([{g,code:T3,Pts:P,GD:gdMax,GF:st[T3].GF}]).sort((a,b)=> b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF);
-  h+='<table class="gdg"><tr><th>#</th><th>隊</th><th>組</th><th>分</th><th>得失</th></tr>';
-  allNow.slice(0,10).forEach((x,i)=>{ const me=x.code===T3&&x.g===g;
-    h+='<tr'+(me?' class="gx"':'')+'><td>'+(i+1)+'</td><td>'+T[x.code].zh+(me?'（本隊·最佳情況）':'')+'</td><td>'+x.g+'</td><td>'+x.Pts+'</td><td>'+sgn(x.GD)+'</td></tr>'; });
-  return h+'</table></div></details>';
-}
-
 /* ===== 32 強走線 (FIFA Annex C 官方 495 組合) ===== */
 const ANNEXC={"ABCDEFGH":"HGBCAFDE","ABCDEFGI":"CGBDAFEI","ABCDEFGJ":"CGBDAFEJ","ABCDEFGK":"CGBDAFEK","ABCDEFGL":"CGBDAFLE","ABCDEFHI":"HEBCAFDI","ABCDEFHJ":"HJBCAFDE","ABCDEFHK":"HEBCAFDK","ABCDEFHL":"HFBCADLE","ABCDEFIJ":"CJBDAFEI","ABCDEFIK":"CEBDAFIK","ABCDEFIL":"CEBDAFLI","ABCDEFJK":"CJBDAFEK","ABCDEFJL":"CJBDAFLE","ABCDEFKL":"CEBDAFLK","ABCDEGHI":"HGBCADEI","ABCDEGHJ":"HGBCADEJ","ABCDEGHK":"HGBCADEK","ABCDEGHL":"HGBCADLE","ABCDEGIJ":"EGBCADIJ","ABCDEGIK":"EGBCADIK","ABCDEGIL":"EGBCADLI","ABCDEGJK":"EGBCADJK","ABCDEGJL":"EGBCADLJ","ABCDEGKL":"EGBCADLK","ABCDEHIJ":"HJBCADEI","ABCDEHIK":"HEBCADIK","ABCDEHIL":"HEBCADLI","ABCDEHJK":"HJBCADEK","ABCDEHJL":"HJBCADLE","ABCDEHKL":"HEBCADLK","ABCDEIJK":"EJBCADIK","ABCDEIJL":"EJBCADLI","ABCDEIKL":"EIBCADLK","ABCDEJKL":"EJBCADLK","ABCDFGHI":"HGBCAFDI","ABCDFGHJ":"HGBCAFDJ","ABCDFGHK":"HGBCAFDK","ABCDFGHL":"CGBDAFLH","ABCDFGIJ":"CGBDAFIJ","ABCDFGIK":"CGBDAFIK","ABCDFGIL":"CGBDAFLI","ABCDFGJK":"CGBDAFJK","ABCDFGJL":"CGBDAFLJ","ABCDFGKL":"CGBDAFLK","ABCDFHIJ":"HJBCAFDI","ABCDFHIK":"HFBCADIK","ABCDFHIL":"HFBCADLI","ABCDFHJK":"HJBCAFDK","ABCDFHJL":"CJBDAFLH","ABCDFHKL":"HFBCADLK","ABCDFIJK":"CJBDAFIK","ABCDFIJL":"CJBDAFLI","ABCDFIKL":"CIBDAFLK","ABCDFJKL":"CJBDAFLK","ABCDGHIJ":"HGBCADIJ","ABCDGHIK":"HGBCADIK","ABCDGHIL":"HGBCADLI","ABCDGHJK":"HGBCADJK","ABCDGHJL":"HGBCADLJ","ABCDGHKL":"HGBCADLK","ABCDGIJK":"CJBDAGIK","ABCDGIJL":"CJBDAGLI","ABCDGIKL":"IGBCADLK","ABCDGJKL":"CJBDAGLK","ABCDHIJK":"HJBCADIK","ABCDHIJL":"HJBCADLI","ABCDHIKL":"HIBCADLK","ABCDHJKL":"HJBCADLK","ABCDIJKL":"IJBCADLK","ABCEFGHI":"HGBCAFEI","ABCEFGHJ":"HGBCAFEJ","ABCEFGHK":"HGBCAFEK","ABCEFGHL":"HGBCAFLE","ABCEFGIJ":"EGBCAFIJ","ABCEFGIK":"EGBCAFIK","ABCEFGIL":"EGBCAFLI","ABCEFGJK":"EGBCAFJK","ABCEFGJL":"EGBCAFLJ","ABCEFGKL":"EGBCAFLK","ABCEFHIJ":"HJBCAFEI","ABCEFHIK":"HEBCAFIK","ABCEFHIL":"HEBCAFLI","ABCEFHJK":"HJBCAFEK","ABCEFHJL":"HJBCAFLE","ABCEFHKL":"HEBCAFLK","ABCEFIJK":"EJBCAFIK","ABCEFIJL":"EJBCAFLI","ABCEFIKL":"EIBCAFLK","ABCEFJKL":"EJBCAFLK","ABCEGHIJ":"HJBCAGEI","ABCEGHIK":"EGBCAHIK","ABCEGHIL":"EGBCAHLI","ABCEGHJK":"HJBCAGEK","ABCEGHJL":"HJBCAGLE","ABCEGHKL":"EGBCAHLK","ABCEGIJK":"EJBCAGIK","ABCEGIJL":"EJBCAGLI","ABCEGIKL":"EGBAICLK","ABCEGJKL":"EJBCAGLK","ABCEHIJK":"EJBCAHIK","ABCEHIJL":"EJBCAHLI","ABCEHIKL":"EIBCAHLK","ABCEHJKL":"EJBCAHLK","ABCEIJKL":"EJBAICLK","ABCFGHIJ":"HGBCAFIJ","ABCFGHIK":"HGBCAFIK","ABCFGHIL":"HGBCAFLI","ABCFGHJK":"HGBCAFJK","ABCFGHJL":"HGBCAFLJ","ABCFGHKL":"HGBCAFLK","ABCFGIJK":"CJBFAGIK","ABCFGIJL":"CJBFAGLI","ABCFGIKL":"IGBCAFLK","ABCFGJKL":"CJBFAGLK","ABCFHIJK":"HJBCAFIK","ABCFHIJL":"HJBCAFLI","ABCFHIKL":"HIBCAFLK","ABCFHJKL":"HJBCAFLK","ABCFIJKL":"IJBCAFLK","ABCGHIJK":"HJBCAGIK","ABCGHIJL":"HJBCAGLI","ABCGHIKL":"IGBCAHLK","ABCGHJKL":"HJBCAGLK","ABCGIJKL":"IJBCAGLK","ABCHIJKL":"IJBCAHLK","ABDEFGHI":"HGBDAFEI","ABDEFGHJ":"HGBDAFEJ","ABDEFGHK":"HGBDAFEK","ABDEFGHL":"HGBDAFLE","ABDEFGIJ":"EGBDAFIJ","ABDEFGIK":"EGBDAFIK","ABDEFGIL":"EGBDAFLI","ABDEFGJK":"EGBDAFJK","ABDEFGJL":"EGBDAFLJ","ABDEFGKL":"EGBDAFLK","ABDEFHIJ":"HJBDAFEI","ABDEFHIK":"HEBDAFIK","ABDEFHIL":"HEBDAFLI","ABDEFHJK":"HJBDAFEK","ABDEFHJL":"HJBDAFLE","ABDEFHKL":"HEBDAFLK","ABDEFIJK":"EJBDAFIK","ABDEFIJL":"EJBDAFLI","ABDEFIKL":"EIBDAFLK","ABDEFJKL":"EJBDAFLK","ABDEGHIJ":"HJBDAGEI","ABDEGHIK":"EGBDAHIK","ABDEGHIL":"EGBDAHLI","ABDEGHJK":"HJBDAGEK","ABDEGHJL":"HJBDAGLE","ABDEGHKL":"EGBDAHLK","ABDEGIJK":"EJBDAGIK","ABDEGIJL":"EJBDAGLI","ABDEGIKL":"EGBAIDLK","ABDEGJKL":"EJBDAGLK","ABDEHIJK":"EJBDAHIK","ABDEHIJL":"EJBDAHLI","ABDEHIKL":"EIBDAHLK","ABDEHJKL":"EJBDAHLK","ABDEIJKL":"EJBAIDLK","ABDFGHIJ":"HGBDAFIJ","ABDFGHIK":"HGBDAFIK","ABDFGHIL":"HGBDAFLI","ABDFGHJK":"HGBDAFJK","ABDFGHJL":"HGBDAFLJ","ABDFGHKL":"HGBDAFLK","ABDFGIJK":"FJBDAGIK","ABDFGIJL":"FJBDAGLI","ABDFGIKL":"IGBDAFLK","ABDFGJKL":"FJBDAGLK","ABDFHIJK":"HJBDAFIK","ABDFHIJL":"HJBDAFLI","ABDFHIKL":"HIBDAFLK","ABDFHJKL":"HJBDAFLK","ABDFIJKL":"IJBDAFLK","ABDGHIJK":"HJBDAGIK","ABDGHIJL":"HJBDAGLI","ABDGHIKL":"IGBDAHLK","ABDGHJKL":"HJBDAGLK","ABDGIJKL":"IJBDAGLK","ABDHIJKL":"IJBDAHLK","ABEFGHIJ":"HJBFAGEI","ABEFGHIK":"EGBFAHIK","ABEFGHIL":"EGBFAHLI","ABEFGHJK":"HJBFAGEK","ABEFGHJL":"HJBFAGLE","ABEFGHKL":"EGBFAHLK","ABEFGIJK":"EJBFAGIK","ABEFGIJL":"EJBFAGLI","ABEFGIKL":"EGBAIFLK","ABEFGJKL":"EJBFAGLK","ABEFHIJK":"EJBFAHIK","ABEFHIJL":"EJBFAHLI","ABEFHIKL":"EIBFAHLK","ABEFHJKL":"EJBFAHLK","ABEFIJKL":"EJBAIFLK","ABEGHIJK":"EJBAHGIK","ABEGHIJL":"EJBAHGLI","ABEGHIKL":"EGBAIHLK","ABEGHJKL":"EJBAHGLK","ABEGIJKL":"EJBAIGLK","ABEHIJKL":"EJBAIHLK","ABFGHIJK":"HJBFAGIK","ABFGHIJL":"HJBFAGLI","ABFGHIKL":"HGBAIFLK","ABFGHJKL":"HJBFAGLK","ABFGIJKL":"IJBFAGLK","ABFHIJKL":"HJBAIFLK","ABGHIJKL":"HJBAIGLK","ACDEFGHI":"HGECAFDI","ACDEFGHJ":"HGJCAFDE","ACDEFGHK":"HGECAFDK","ACDEFGHL":"HGFCADLE","ACDEFGIJ":"CGJDAFEI","ACDEFGIK":"CGEDAFIK","ACDEFGIL":"CGEDAFLI","ACDEFGJK":"CGJDAFEK","ACDEFGJL":"CGJDAFLE","ACDEFGKL":"CGEDAFLK","ACDEFHIJ":"HJECAFDI","ACDEFHIK":"HEFCADIK","ACDEFHIL":"HEFCADLI","ACDEFHJK":"HJECAFDK","ACDEFHJL":"HJFCADLE","ACDEFHKL":"HEFCADLK","ACDEFIJK":"CJEDAFIK","ACDEFIJL":"CJEDAFLI","ACDEFIKL":"CEIDAFLK","ACDEFJKL":"CJEDAFLK","ACDEGHIJ":"HGJCADEI","ACDEGHIK":"HGECADIK","ACDEGHIL":"HGECADLI","ACDEGHJK":"HGJCADEK","ACDEGHJL":"HGJCADLE","ACDEGHKL":"HGECADLK","ACDEGIJK":"EGJCADIK","ACDEGIJL":"EGJCADLI","ACDEGIKL":"EGICADLK","ACDEGJKL":"EGJCADLK","ACDEHIJK":"HJECADIK","ACDEHIJL":"HJECADLI","ACDEHIKL":"HEICADLK","ACDEHJKL":"HJECADLK","ACDEIJKL":"EJICADLK","ACDFGHIJ":"HGJCAFDI","ACDFGHIK":"HGFCADIK","ACDFGHIL":"HGFCADLI","ACDFGHJK":"HGJCAFDK","ACDFGHJL":"CGJDAFLH","ACDFGHKL":"HGFCADLK","ACDFGIJK":"CGJDAFIK","ACDFGIJL":"CGJDAFLI","ACDFGIKL":"CGIDAFLK","ACDFGJKL":"CGJDAFLK","ACDFHIJK":"HJFCADIK","ACDFHIJL":"HJFCADLI","ACDFHIKL":"HFICADLK","ACDFHJKL":"HJFCADLK","ACDFIJKL":"CJIDAFLK","ACDGHIJK":"HGJCADIK","ACDGHIJL":"HGJCADLI","ACDGHIKL":"HGICADLK","ACDGHJKL":"HGJCADLK","ACDGIJKL":"IGJCADLK","ACDHIJKL":"HJICADLK","ACEFGHIJ":"HGJCAFEI","ACEFGHIK":"HGECAFIK","ACEFGHIL":"HGECAFLI","ACEFGHJK":"HGJCAFEK","ACEFGHJL":"HGJCAFLE","ACEFGHKL":"HGECAFLK","ACEFGIJK":"EGJCAFIK","ACEFGIJL":"EGJCAFLI","ACEFGIKL":"EGICAFLK","ACEFGJKL":"EGJCAFLK","ACEFHIJK":"HJECAFIK","ACEFHIJL":"HJECAFLI","ACEFHIKL":"HEICAFLK","ACEFHJKL":"HJECAFLK","ACEFIJKL":"EJICAFLK","ACEGHIJK":"EGJCAHIK","ACEGHIJL":"EGJCAHLI","ACEGHIKL":"EGICAHLK","ACEGHJKL":"EGJCAHLK","ACEGIJKL":"EJICAGLK","ACEHIJKL":"EJICAHLK","ACFGHIJK":"HGJCAFIK","ACFGHIJL":"HGJCAFLI","ACFGHIKL":"HGICAFLK","ACFGHJKL":"HGJCAFLK","ACFGIJKL":"IGJCAFLK","ACFHIJKL":"HJICAFLK","ACGHIJKL":"HJICAGLK","ADEFGHIJ":"HGJDAFEI","ADEFGHIK":"HGEDAFIK","ADEFGHIL":"HGEDAFLI","ADEFGHJK":"HGJDAFEK","ADEFGHJL":"HGJDAFLE","ADEFGHKL":"HGEDAFLK","ADEFGIJK":"EGJDAFIK","ADEFGIJL":"EGJDAFLI","ADEFGIKL":"EGIDAFLK","ADEFGJKL":"EGJDAFLK","ADEFHIJK":"HJEDAFIK","ADEFHIJL":"HJEDAFLI","ADEFHIKL":"HEIDAFLK","ADEFHJKL":"HJEDAFLK","ADEFIJKL":"EJIDAFLK","ADEGHIJK":"EGJDAHIK","ADEGHIJL":"EGJDAHLI","ADEGHIKL":"EGIDAHLK","ADEGHJKL":"EGJDAHLK","ADEGIJKL":"EJIDAGLK","ADEHIJKL":"EJIDAHLK","ADFGHIJK":"HGJDAFIK","ADFGHIJL":"HGJDAFLI","ADFGHIKL":"HGIDAFLK","ADFGHJKL":"HGJDAFLK","ADFGIJKL":"IGJDAFLK","ADFHIJKL":"HJIDAFLK","ADGHIJKL":"HJIDAGLK","AEFGHIJK":"EGJFAHIK","AEFGHIJL":"EGJFAHLI","AEFGHIKL":"EGIFAHLK","AEFGHJKL":"EGJFAHLK","AEFGIJKL":"EJIFAGLK","AEFHIJKL":"EJIFAHLK","AEGHIJKL":"EJIAHGLK","AFGHIJKL":"HJIFAGLK","BCDEFGHI":"CGBDHFEI","BCDEFGHJ":"HGBCJFDE","BCDEFGHK":"CGBDHFEK","BCDEFGHL":"CGBDHFLE","BCDEFGIJ":"CGBDJFEI","BCDEFGIK":"CGBDEFIK","BCDEFGIL":"CGBDEFLI","BCDEFGJK":"CGBDJFEK","BCDEFGJL":"CGBDJFLE","BCDEFGKL":"CGBDEFLK","BCDEFHIJ":"CJBDHFEI","BCDEFHIK":"CEBDHFIK","BCDEFHIL":"CEBDHFLI","BCDEFHJK":"CJBDHFEK","BCDEFHJL":"CJBDHFLE","BCDEFHKL":"CEBDHFLK","BCDEFIJK":"CJBDEFIK","BCDEFIJL":"CJBDEFLI","BCDEFIKL":"CEBDIFLK","BCDEFJKL":"CJBDEFLK","BCDEGHIJ":"HGBCJDEI","BCDEGHIK":"EGBCHDIK","BCDEGHIL":"EGBCHDLI","BCDEGHJK":"HGBCJDEK","BCDEGHJL":"HGBCJDLE","BCDEGHKL":"EGBCHDLK","BCDEGIJK":"EGBCJDIK","BCDEGIJL":"EGBCJDLI","BCDEGIKL":"EGBCIDLK","BCDEGJKL":"EGBCJDLK","BCDEHIJK":"EJBCHDIK","BCDEHIJL":"EJBCHDLI","BCDEHIKL":"EIBCHDLK","BCDEHJKL":"EJBCHDLK","BCDEIJKL":"EJBCIDLK","BCDFGHIJ":"HGBCJFDI","BCDFGHIK":"CGBDHFIK","BCDFGHIL":"CGBDHFLI","BCDFGHJK":"HGBCJFDK","BCDFGHJL":"CGBDHFLJ","BCDFGHKL":"CGBDHFLK","BCDFGIJK":"CGBDJFIK","BCDFGIJL":"CGBDJFLI","BCDFGIKL":"CGBDIFLK","BCDFGJKL":"CGBDJFLK","BCDFHIJK":"CJBDHFIK","BCDFHIJL":"CJBDHFLI","BCDFHIKL":"CIBDHFLK","BCDFHJKL":"CJBDHFLK","BCDFIJKL":"CJBDIFLK","BCDGHIJK":"HGBCJDIK","BCDGHIJL":"HGBCJDLI","BCDGHIKL":"HGBCIDLK","BCDGHJKL":"HGBCJDLK","BCDGIJKL":"IGBCJDLK","BCDHIJKL":"HJBCIDLK","BCEFGHIJ":"HGBCJFEI","BCEFGHIK":"EGBCHFIK","BCEFGHIL":"EGBCHFLI","BCEFGHJK":"HGBCJFEK","BCEFGHJL":"HGBCJFLE","BCEFGHKL":"EGBCHFLK","BCEFGIJK":"EGBCJFIK","BCEFGIJL":"EGBCJFLI","BCEFGIKL":"EGBCIFLK","BCEFGJKL":"EGBCJFLK","BCEFHIJK":"EJBCHFIK","BCEFHIJL":"EJBCHFLI","BCEFHIKL":"EIBCHFLK","BCEFHJKL":"EJBCHFLK","BCEFIJKL":"EJBCIFLK","BCEGHIJK":"EJBCHGIK","BCEGHIJL":"EJBCHGLI","BCEGHIKL":"EGBCIHLK","BCEGHJKL":"EJBCHGLK","BCEGIJKL":"EJBCIGLK","BCEHIJKL":"EJBCIHLK","BCFGHIJK":"HGBCJFIK","BCFGHIJL":"HGBCJFLI","BCFGHIKL":"HGBCIFLK","BCFGHJKL":"HGBCJFLK","BCFGIJKL":"IGBCJFLK","BCFHIJKL":"HJBCIFLK","BCGHIJKL":"HJBCIGLK","BDEFGHIJ":"HGBDJFEI","BDEFGHIK":"EGBDHFIK","BDEFGHIL":"EGBDHFLI","BDEFGHJK":"HGBDJFEK","BDEFGHJL":"HGBDJFLE","BDEFGHKL":"EGBDHFLK","BDEFGIJK":"EGBDJFIK","BDEFGIJL":"EGBDJFLI","BDEFGIKL":"EGBDIFLK","BDEFGJKL":"EGBDJFLK","BDEFHIJK":"EJBDHFIK","BDEFHIJL":"EJBDHFLI","BDEFHIKL":"EIBDHFLK","BDEFHJKL":"EJBDHFLK","BDEFIJKL":"EJBDIFLK","BDEGHIJK":"EJBDHGIK","BDEGHIJL":"EJBDHGLI","BDEGHIKL":"EGBDIHLK","BDEGHJKL":"EJBDHGLK","BDEGIJKL":"EJBDIGLK","BDEHIJKL":"EJBDIHLK","BDFGHIJK":"HGBDJFIK","BDFGHIJL":"HGBDJFLI","BDFGHIKL":"HGBDIFLK","BDFGHJKL":"HGBDJFLK","BDFGIJKL":"IGBDJFLK","BDFHIJKL":"HJBDIFLK","BDGHIJKL":"HJBDIGLK","BEFGHIJK":"EJBFHGIK","BEFGHIJL":"EJBFHGLI","BEFGHIKL":"EGBFIHLK","BEFGHJKL":"EJBFHGLK","BEFGIJKL":"EJBFIGLK","BEFHIJKL":"EJBFIHLK","BEGHIJKL":"EJIBHGLK","BFGHIJKL":"HJBFIGLK","CDEFGHIJ":"CGJDHFEI","CDEFGHIK":"CGEDHFIK","CDEFGHIL":"CGEDHFLI","CDEFGHJK":"CGJDHFEK","CDEFGHJL":"CGJDHFLE","CDEFGHKL":"CGEDHFLK","CDEFGIJK":"CGEDJFIK","CDEFGIJL":"CGEDJFLI","CDEFGIKL":"CGEDIFLK","CDEFGJKL":"CGEDJFLK","CDEFHIJK":"CJEDHFIK","CDEFHIJL":"CJEDHFLI","CDEFHIKL":"CEIDHFLK","CDEFHJKL":"CJEDHFLK","CDEFIJKL":"CJEDIFLK","CDEGHIJK":"EGJCHDIK","CDEGHIJL":"EGJCHDLI","CDEGHIKL":"EGICHDLK","CDEGHJKL":"EGJCHDLK","CDEGIJKL":"EGICJDLK","CDEHIJKL":"EJICHDLK","CDFGHIJK":"CGJDHFIK","CDFGHIJL":"CGJDHFLI","CDFGHIKL":"CGIDHFLK","CDFGHJKL":"CGJDHFLK","CDFGIJKL":"CGIDJFLK","CDFHIJKL":"CJIDHFLK","CDGHIJKL":"HGICJDLK","CEFGHIJK":"EGJCHFIK","CEFGHIJL":"EGJCHFLI","CEFGHIKL":"EGICHFLK","CEFGHJKL":"EGJCHFLK","CEFGIJKL":"EGICJFLK","CEFHIJKL":"EJICHFLK","CEGHIJKL":"EJICHGLK","CFGHIJKL":"HGICJFLK","DEFGHIJK":"EGJDHFIK","DEFGHIJL":"EGJDHFLI","DEFGHIKL":"EGIDHFLK","DEFGHJKL":"EGJDHFLK","DEFGIJKL":"EGIDJFLK","DEFHIJKL":"EJIDHFLK","DEGHIJKL":"EJIDHGLK","DFGHIJKL":"HGIDJFLK","EFGHIJKL":"EJIFHGLK"};
 const WIN_ORDER=['A','B','D','E','G','I','K','L'];
@@ -561,15 +531,14 @@ const BCOLS=[
 let KO={}; try{ KO=JSON.parse(localStorage.getItem("wc26ko")||"{}"); }catch(e){ KO={}; }
 let SIMP=null;   // 模擬出嚟嘅每隊機率 {code:{...}}；改賽果會清走
 let PRED=null;   // 走線陣容（逐圈推演填入）；未開始為 null
+let SCEN={};     // 每組出線情境內容（彈窗用）
 /* 邊場勝方入邊場（畫連接線用） */
 const PARENT={}; for(const m in KO_MATCHES){ KO_MATCHES[m].forEach(s=>{ if(s.MW!==undefined) PARENT[s.MW]=+m; }); }
 function saveKO(){ try{ if(!sandbox) localStorage.setItem("wc26ko",JSON.stringify(KO)); }catch(e){} }
 function koTeam(src){
-  // 小組來源（首/次/第3名）：未 Gen（PRED 為 null）一律當未定 → 走線顯示空格
   if(src.W!==undefined)  return PRED ? PRED.order[src.W][0] : null;
   if(src.R!==undefined)  return PRED ? PRED.order[src.R][1] : null;
   if(src.Tt!==undefined){ if(!PRED) return null; const g=PRED.assign[src.Tt]; return g?PRED.order[g][2]:null; }
-  // 淘汰賽：手動揀贏方優先，其次用預測勝方
   if(src.MW!==undefined) return KO[src.MW] || (PRED&&PRED.win[src.MW]) || null;
   if(src.ML!==undefined){ const w=KO[src.ML] || (PRED&&PRED.win[src.ML]); if(!w)return null;
     const ps=KO_MATCHES[src.ML].map(koTeam); return ps.find(p=>p&&p!==w)||null; }
@@ -633,10 +602,10 @@ function renderBracket(){
       if(KO[m]===team) delete KO[m]; else KO[m]=team; saveKO(); renderBracket(); }); });
   (window.requestAnimationFrame||setTimeout)(drawConnectors);
 }
-/* 喺走線盒之間畫 ┐┘ 連接線（SVG 疊圖，跟實際盒位，唔會錯位） */
+/* 喺走線盒之間畫連接線（SVG 疊圖，跟實際盒位） */
 function drawConnectors(){
   const bracket=document.getElementById('bracket');
-  if(!bracket || !bracket.offsetWidth) return;            // 隱藏（未揀呢個 tab）時唔畫
+  if(!bracket || !bracket.offsetWidth) return;
   const old=document.getElementById('koSvg'); if(old) old.remove();
   const br=bracket.getBoundingClientRect();
   const rectOf=m=>{ const el=bracket.querySelector('.kmatch[data-mm="'+m+'"]'); if(!el) return null;
@@ -646,17 +615,15 @@ function drawConnectors(){
   for(const child in PARENT){
     const a=rectOf(child), b=rectOf(PARENT[child]); if(!a||!b) continue;
     let x1,x2;
-    if(a.r<=b.l){ x1=a.r; x2=b.l; }   // child 喺左 → 由右邊出
-    else        { x1=a.l; x2=b.r; }   // child 喺右 → 由左邊出
+    if(a.r<=b.l){ x1=a.r; x2=b.l; }
+    else        { x1=a.l; x2=b.r; }
     const xm=(x1+x2)/2;
     paths+='<path d="M'+x1+' '+a.cy+' H'+xm+' V'+b.cy+' H'+x2+'"/>';
   }
   const svg='<svg id="koSvg" width="'+bracket.scrollWidth+'" height="'+bracket.scrollHeight+'">'+paths+'</svg>';
   bracket.insertAdjacentHTML('afterbegin', svg);
 }
-
-/* ===== Elo 評分 + Monte Carlo 機率模擬 =====
-   Elo 以 eloratings.net（2026年6月）做錨，個別細隊用合理估值，可自行更新。 */
+/* ===== Elo 評分 + Monte Carlo 機率模擬 ===== */
 const ELO={
   ESP:2129,ARG:2128,FRA:2084,ENG:2055,COL:1998,BRA:1978,POR:1967,NED:1944,GER:1939,NOR:1929,
   JPN:1910,MEX:1896,CRO:1925,ECU:1925,SUI:1895,URU:1888,TUR:1878,SEN:1868,BEL:1850,MAR:1855,
@@ -665,9 +632,7 @@ const ELO={
   RSA:1660,IRQ:1660,JOR:1658,KSA:1648,CPV:1638,HAI:1560,CUW:1560,NZL:1500
 };
 function eloOf(c){ return ELO[c]||1700; }
-const HOSTS={USA:1,MEX:1,CAN:1}, HOST_BOOST=60;   // 主辦國（美墨加）主場加成
-
-/* 由傳入賽果排名（同 rankGroup 一樣嘅 FIFA 拆同分邏輯，但唔讀全域 R） */
+const HOSTS={USA:1,MEX:1,CAN:1}, HOST_BOOST=60;
 function buildStatsFrom(codes, matches){
   const st={}; codes.forEach(c=>st[c]=blankStat(c));
   matches.forEach(m=>{ const H=st[m.h],A=st[m.a]; H.P++;A.P++;
@@ -686,23 +651,20 @@ function rankFrom(codes, matches){
   return {order,st};
 }
 function poisson(l){ const L=Math.exp(-l); let k=0,p=1; do{k++;p*=Math.random();}while(p>L); return k-1; }
-/* 一場波抽比數（Elo 差 → 入球期望 → Poisson） */
 function simScore(a,b){
   const ea=eloOf(a)+(HOSTS[a]?HOST_BOOST:0), eb=eloOf(b)+(HOSTS[b]?HOST_BOOST:0);
   const sup=(ea-eb)/100*0.40, base=2.6;
   return [poisson(Math.max(0.15,base/2+sup/2)), poisson(Math.max(0.15,base/2-sup/2))];
 }
-/* 淘汰賽：90分鐘 → 加時(1/3 入球率) → 十二碼(Elo 輕微加權) */
 function koWinner(a,b){
   const ea=eloOf(a)+(HOSTS[a]?HOST_BOOST:0), eb=eloOf(b)+(HOSTS[b]?HOST_BOOST:0);
   const sup=(ea-eb)/100*0.40;
   let ga=poisson(Math.max(0.15,1.3+sup/2)), gb=poisson(Math.max(0.15,1.3-sup/2));
   if(ga===gb){ ga+=poisson(Math.max(0.04,(1.3+sup/2)/3)); gb+=poisson(Math.max(0.04,(1.3-sup/2)/3)); }
   if(ga>gb)return a; if(gb>ga)return b;
-  return Math.random() < 1/(1+Math.pow(10,-(ea-eb)/600)) ? a : b;   // 十二碼
+  return Math.random() < 1/(1+Math.pow(10,-(ea-eb)/600)) ? a : b;
 }
 const R32MS=[73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88];
-/* 跑一次完整賽事，累加每隊到達各階段嘅次數入 acc */
 function simOnce(acc){
   const grpRank={}, thirds=[];
   for(const g in GROUPS){
@@ -730,7 +692,6 @@ function simOnce(acc){
     winners[m]=(!a||!b)?(a||b):koWinner(a,b);
   }));
   const hit=(code,k)=>{ if(code){ (acc[code]||(acc[code]={p1:0,p2:0,p3q:0,r32:0,r16:0,qf:0,sf:0,fin:0,ch:0}))[k]++; } };
-  // 小組出線機率：組首 / 組次 / 第3名出線
   for(const g in GROUPS){ hit(grpRank[g][0],'p1'); hit(grpRank[g][1],'p2'); }
   thirds.slice(0,8).forEach(t=>hit(t.code,'p3q'));
   const r32=new Set(); R32MS.forEach(m=>(parts[m]||[]).forEach(x=>x&&r32.add(x)));
@@ -761,30 +722,7 @@ function runSim(N){
 function pcell(p,gold,strong){ const s = p>=99.5?'>99' : (p<=0?'·' : (p<0.5?'<1':Math.round(p)));
   return '<div class="pcell'+(gold?' cgold':'')+(strong?' cstrong':'')+'"><span style="width:'+Math.min(100,p)+'%"></span><i>'+s+'</i></div>'; }
 function fmtPct(frac){ const p=100*frac; return p>=10?Math.round(p)+'%' : p>=1?p.toFixed(1)+'%' : p>0?'<1%':'—'; }
-function buildPredicted(acc){
-  // 用模擬統計，揀每組最可能嘅排序（3×組首＋2×組次＋1×第3出線）
-  const sc=c=>{const a=acc[c]||{};return 3*(a.p1||0)+2*(a.p2||0)+(a.p3q||0);};
-  const order={};
-  for(const g in GROUPS) order[g]=GROUPS[g].slice().sort((a,b)=>sc(b)-sc(a));
-  // 12 組預測第3名，按「以第3名出線」機率排，頭8組出線
-  const th=Object.keys(GROUPS).map(g=>({g,v:(acc[order[g][2]]||{}).p3q||0})).sort((x,y)=>y.v-x.v);
-  const assign=thirdAssign(th.slice(0,8).map(t=>t.g).sort())||{};
-  const seed=src=>{ if(src.W!==undefined)return order[src.W][0];
-    if(src.R!==undefined)return order[src.R][1];
-    if(src.Tt!==undefined){const g=assign[src.Tt];return g?order[g][2]:null;} return null; };
-  const eff=c=>eloOf(c)+(HOSTS[c]?HOST_BOOST:0);
-  const win={}, lose={};
-  Object.keys(KO_MATCHES).map(Number).sort((a,b)=>a-b).forEach(m=>{
-    const ps=KO_MATCHES[m].map(src=>{
-      if(src.MW!==undefined)return win[src.MW]||null;
-      if(src.ML!==undefined)return lose[src.ML]||null;
-      return seed(src); });
-    const a=ps[0],b=ps[1];
-    if(a&&b){ const w=eff(a)>=eff(b)?a:b; win[m]=w; lose[m]= w===a?b:a; }
-  });
-  return {order,assign,win};
-}
-/* ===== 逐圈推演（隨機抽一次完整賽事，一圈一圈開） ===== */
+/* ===== 逐圈推演（按實力加權隨機，抽一次完整賽事，一圈一圈開） ===== */
 let STEPN=0;   // 0=未開, 1=小組已抽, 2=32強, 3=16強, 4=8強, 5=4強, 6=決賽
 const STEP_MS={2:R32MS,3:[89,90,91,92,93,94,95,96],4:[97,98,99,100],5:[101,102],6:[104,103]};
 const STEP_NAME={1:'小組賽',2:'32強',3:'16強',4:'8強',5:'4強',6:'決賽'};
@@ -829,19 +767,15 @@ function stepNext(){ if(STEPN<1){ stepGroup(); return; } if(STEPN>=6){ stepDone(
 function stepReroll(){ if(STEPN<1){ stepGroup(); return; } clearStagesFrom(STEPN); genStage(STEPN); renderBracket(); stepDone(); }
 function stepAll(){ if(STEPN<1) stepGroup(); while(STEPN<6){ STEPN++; genStage(STEPN); } renderBracket(); stepDone(); }
 function stepReset(){ STEPN=0; PRED=null; for(const m in KO) delete KO[m]; renderBracket(); stepStat('已清除。撳「抽小組賽」重新開始。'); }
-
 function renderSim(acc,N,ms){
   const D={p1:0,p2:0,p3q:0,r32:0,r16:0,qf:0,sf:0,fin:0,ch:0};
-  // 存每隊機率（畀走線格仔用），再重畫走線顯示奪冠機率
   SIMP={};
   for(const g in GROUPS) GROUPS[g].forEach(c=>{ const a=acc[c]||D;
     SIMP[c]={p1:a.p1/N,p2:a.p2/N,p3q:a.p3q/N,r32:a.r32/N,r16:a.r16/N,qf:a.qf/N,sf:a.sf/N,fin:a.fin/N,ch:a.ch/N}; });
-  PRED=PRED; // 唔郁走線：機率表同逐圈推演分開
-  renderBracket();   // 刷新走線格上嘅 % 標籤（如果有揭曉嘅隊）
+  renderBracket();
   const rows=[];
   for(const g in GROUPS) GROUPS[g].forEach(c=>{ const a=acc[c]||D;
     rows.push({c,g,p1:a.p1,p2:a.p2,p3q:a.p3q,r32:a.r32,r16:a.r16,qf:a.qf,sf:a.sf,fin:a.fin,ch:a.ch}); });
-  // 先按出線率，再按奪冠率排
   rows.sort((x,y)=> y.r32-x.r32 || y.ch-x.ch || y.fin-x.fin || y.qf-x.qf);
   const P=v=>100*v/N;
   let h='<table class="ptbl"><tr><th class="l">#　球隊</th><th>組</th>'
@@ -855,7 +789,6 @@ function renderSim(acc,N,ms){
   const stat=document.getElementById('simStat');
   if(stat) stat.textContent='完成 '+N+' 次（'+(ms/1000).toFixed(1)+'秒）。小組未踢完，下表頭四欄＝每隊排第幾／出線嘅機率（組首＋組次＋第3出線＝總出線）；後面係淘汰賽各圈。改賽果後要重新計。';
 }
-
 /* ===== 渲染 ===== */
 function flag(code){ return '<img class="flag" loading="lazy" alt="" src="https://flagcdn.com/'
   +T[code].iso+'.svg" onerror="this.style.visibility=\'hidden\'">'; }
@@ -863,44 +796,71 @@ function tcell(code){ return flag(code)+T[code].zh; }
 function render(){
   renderGroups(); renderThird(); renderOverview(); renderBracket(); markSaved();
 }
-function renderGroups(){
-  const wrap=document.getElementById("groups"); let h="";
-  // 12 組目前第3名(已排序)，攞嚟做跨組「最佳第3名」分界
-  const thirdsNow = thirdData();
-  const cut3team = thirdsNow.length>=8 ? thirdsNow[7] : null;   // 目前出線尾(第8名第3)
-  const cut3 = cut3team ? cut3team.Pts : 0;
-  const top8third = thirdsNow.slice(0,8).map(d=>d.code);        // 目前最佳8隊第3名
-  // 本組第3名(P分、得失球gdNow、最後一場lastSign:>0贏 <0輸 0和 undefined=多場未踢) 入唔入最佳8隊 → 直接寫條件
+function buildScen(g, S){
+  // 砌出線情境內容（彈窗用），回傳 HTML 字串
+  const cut3team = thirdData()[7] || null;
+  let h='<div class="scnote">📊 跨組「最佳第3名」分界：目前出線尾（第8名第3）係 <b>'+(cut3team?T[cut3team.code].zh+'（'+cut3team.g+'組）'+cut3team.Pts+'分'+sgn(cut3team.GD):'未定')+'</b>。下面每個情境直接寫本組第3名夠唔夠、要幾多球先爭得過呢條線（其他組未踢完前會浮動；得失球啱啱相同時再比總入球）。</div>';
+  const thirdsNow=thirdData();
   function qual3(g, third, P, gdNow, lastSign){
-    const others = thirdsNow.filter(d=>d.g!==g);      // 其餘11組第3名(已排序)
+    const others=thirdsNow.filter(d=>d.g!==g);
     if(others.length<8) return {t:'✓暫夠',c:'b-q'};
-    const cut = others[7];                             // 第8好嘅其他組第3名 ＝ 要越過嘅線
-    const tg = others.every(d=>d.done) ? '' : '暫';     // 其他組未踢完就標「暫」
-    const L = '分界 '+T[cut.code].zh+'('+cut.g+') '+cut.Pts+'分'+sgn(cut.GD);
-    if(P > cut.Pts) return {t:'✓'+tg+'入｜'+P+'分 > '+L,c:'b-q'};
-    if(P < cut.Pts) return {t:'✗'+tg+'唔入｜'+P+'分 < '+L+'（分數已定）',c:'b-out'};
-    // 同分 → 比總得失球
+    const cut=others[7];
+    const tg=others.every(d=>d.done)?'':'暫';
+    const L='分界 '+T[cut.code].zh+'('+cut.g+') '+cut.Pts+'分'+sgn(cut.GD);
+    if(P>cut.Pts) return {t:'✓'+tg+'入｜'+P+'分 > '+L,c:'b-q'};
+    if(P<cut.Pts) return {t:'✗'+tg+'唔入｜'+P+'分 < '+L,c:'b-out'};
     if(lastSign===undefined) return {t:'⚠'+tg+'同分（'+L+'），要睇埋最後幾場得失球',c:'b-live'};
     if(lastSign===0){
       if(gdNow>cut.GD) return {t:'✓'+tg+'入｜同分，你得失球'+sgn(gdNow)+' > '+L,c:'b-q'};
       if(gdNow<cut.GD) return {t:'✗'+tg+'唔入｜同分，你得失球'+sgn(gdNow)+' < '+L,c:'b-out'};
       return {t:'⚠'+tg+'同分又同得失球('+sgn(gdNow)+')，要比總入球',c:'b-live'};
     }
-    const need = cut.GD - gdNow + 1;                   // 最終得失球要 > cut.GD
+    const need=cut.GD-gdNow+1;
     if(lastSign>0){
       if(need<=1) return {t:'✓'+tg+'入｜最後一場贏咗就夠（'+L+'）',c:'b-q'};
       return {t:'⚠'+tg+'最後一場要淨勝 ≥ '+need+' 球｜同分'+L,c:'b-live'};
     }
-    const maxLose = gdNow - cut.GD - 1;                // 最多淨負幾多球仲入到
+    const maxLose=gdNow-cut.GD-1;
     if(maxLose<1) return {t:'✗'+tg+'唔入｜要輸波，得失球追唔上'+L,c:'b-out'};
     return {t:'⚠'+tg+'最後一場淨負 ≤ '+maxLose+' 球先入｜同分'+L,c:'b-live'};
   }
+  if(S.n<=3){
+    S.rows.forEach(row=>{
+      const rr=rowResult(row.blocks);
+      let out;
+      if(rr.clean){
+        const outs=outcomesAll(g,row.combo), pts=ptsOf(GROUPS[g],outs), P=pts[rr.third];
+        const stp=buildStats(g);
+        const dec=remInfoFor(g,row.combo,rr.third).filter(r=>r.sign!==0);
+        const lastSign=dec.length===1?dec[0].sign:(dec.length===0?0:undefined);
+        const q=qual3(g,rr.third,P,stp[rr.third].GD,lastSign);
+        out='<b class="qg">出線：'+T[rr.q[0]].zh+'、'+T[rr.q[1]].zh+'</b> ｜ 第3：'+T[rr.third].zh+' '+P+'分 <span class="badge '+q.c+'">'+q.t+'</span>';
+      } else {
+        const sure=rr.sure.map(c=>T[c].zh).join('、');
+        out='<b class="qg">出線：'+(sure?sure+' ＋ ':'')+'</b><span class="gd">'+rr.contest.map(c=>T[c].zh).join(' / ')+' 爭（視得失球）</span>';
+        out += gdContestDetail(g,row.combo,rr.contest);
+      }
+      h+='<div class="srow"><span class="cond">'+comboText(g,row.combo)+'</span> → '+out+'</div>';
+    });
+  } else {
+    h+='<div class="scnote">情境太多（餘 '+S.n+' 場），未方便逐個列。再入多幾場賽果（淨返 ≤3 場未踢）就會逐個比數結果列出。卡上面「狀態」欄已經係精確計算（已出線／出局係數學上肯定）。</div>';
+  }
+  return h;
+}
+function openScen(g){
+  document.getElementById('scenBody').innerHTML = '<h3>'+g+' 組 · 出線情境</h3>' + (SCEN[g]||'冇情境');
+  document.getElementById('scenModal').style.display='flex';
+}
+function closeScen(){ document.getElementById('scenModal').style.display='none'; }
+function renderGroups(){
+  const wrap=document.getElementById("groups"); let h=""; SCEN={};
+  const thirdsNow = thirdData();
+  const top8third = thirdsNow.slice(0,8).map(d=>d.code);
   Object.keys(GROUPS).forEach(g=>{
     const {order,st,played}=rankGroup(g);
     const S=groupScenario(g);
     h+='<div class="gcard"><div class="ghead"><span><span class="gl">'+g+' 組</span></span>'
       +'<span class="sub">'+played+'/6 場</span></div>';
-    // 排名表（狀態抽出表外,避免長隊名爆位）
     h+='<table class="stand"><tr><th class="cpos">#</th><th class="tn">球隊</th><th>賽</th><th>勝</th><th>和</th><th>負</th>'
       +'<th>得</th><th>失</th><th>差</th><th>分</th></tr>';
     order.forEach((c,i)=>{
@@ -914,7 +874,7 @@ function renderGroups(){
         +'<td class="pts">'+s.Pts+'</td></tr>';
     });
     h+='</table>';
-    // 賽程輸入（緊貼排名下面，位置固定；下面嘅標籤／情境點變都唔會推郁啲輸入格）
+    // 賽程輸入
     h+='<div class="fixt">';
     for(let i=0;i<6;i++){
       const codes=GROUPS[g], H=codes[FIX[i][0]], A=codes[FIX[i][1]], r=getR(g,i);
@@ -927,36 +887,15 @@ function renderGroups(){
         +'<button class="mclr" data-g="'+g+'" data-i="'+i+'" title="清除呢場比數">✕</button></div>';
     }
     h+='</div>';
-    // 狀態標籤（只列有定論嘅）
+    // 狀態標籤
     let chips="";
     order.forEach(c=>{ const sb=S.status[c]; if(sb.badge && sb.badge!=='出線未定'){
       chips+='<span class="schip '+sb.cls+'">'+flag(c)+T[c].zh+' '+sb.badge+'</span>'; }});
-    if(chips) h+='<div class="chips" style="padding:8px 10px 2px">'+chips+'</div>';
-    // 出線情境：精確窮舉
+    if(chips) h+='<div class="chips">'+chips+'</div>';
+    // 出線情境：改成按鈕，彈窗顯示（唔再撐開卡，版面唔會郁）
     if(S.n>0){
-      h+='<details class="scen"><summary>🔢 出線情境（餘 '+S.n+' 場 · 共 '+S.total+' 種結果）</summary><div class="scbox">';
-      h+='<div class="scnote">📊 跨組「最佳第3名」分界：目前出線尾（第8名第3）係 <b>'+(cut3team?T[cut3team.code].zh+'（'+cut3team.g+'組）'+cut3team.Pts+'分'+sgn(cut3team.GD):'未定')+'</b>。下面每個情境直接寫本組第3名夠唔夠、要幾多球先爭得過呢條線（其他組未踢完前會浮動；得失球啱啱相同時再比總入球）。</div>';
-      if(S.n<=3){
-        S.rows.forEach(row=>{
-          const rr=rowResult(row.blocks);
-          let out;
-          if(rr.clean){
-            const outs=outcomesAll(g,row.combo), pts=ptsOf(GROUPS[g],outs), P=pts[rr.third];
-            const stp=buildStats(g);
-            const dec=remInfoFor(g,row.combo,rr.third).filter(r=>r.sign!==0);
-            const lastSign = dec.length===1?dec[0].sign:(dec.length===0?0:undefined);
-            const q=qual3(g,rr.third,P,stp[rr.third].GD,lastSign);
-            out='<b class="qg">出線：'+T[rr.q[0]].zh+'、'+T[rr.q[1]].zh+'</b> ｜ 第3：'+T[rr.third].zh+' '+P+'分 <span class="badge '+q.c+'">'+q.t+'</span>';
-          }
-          else { const sure=rr.sure.map(c=>T[c].zh).join('、');
-            out='<b class="qg">出線：'+(sure?sure+' ＋ ':'')+'</b><span class="gd">'+rr.contest.map(c=>T[c].zh).join(' / ')+' 爭（視得失球）</span>';
-            out += gdContestDetail(g,row.combo,rr.contest); }
-          h+='<div class="srow"><span class="cond">'+comboText(g,row.combo)+'</span> → '+out+'</div>';
-        });
-      } else {
-        h+='<div class="scnote">情境太多，未方便逐個列。再入多幾場賽果（淨返 ≤3 場未踢）就會逐個比數結果列出。上面「狀態」欄已經係精確計算（已出線／出局係數學上肯定）。</div>';
-      }
-      h+='</div></details>';
+      SCEN[g]=buildScen(g,S);
+      h+='<button class="scenbtn" data-g="'+g+'">🔢 出線情境（餘 '+S.n+' 場 · 共 '+S.total+' 種結果）▸ 撳開</button>';
     }
     h+='</div>';
   });
@@ -967,6 +906,8 @@ function renderGroups(){
   });
   wrap.querySelectorAll(".mclr").forEach(b=>b.addEventListener("click",e=>{
     const d=e.currentTarget.dataset; clearMatch(d.g,+d.i); }));
+  wrap.querySelectorAll(".scenbtn").forEach(b=>b.addEventListener("click",e=>{
+    openScen(e.currentTarget.dataset.g); }));
 }
 /* 收集每組第 3 名 */
 function thirdData(){
@@ -978,8 +919,8 @@ function thirdData(){
 }
 function renderThird(){
   const arr=thirdData(); const tbl=document.getElementById("thirdTbl");
-  const cut = arr.length>7 ? arr[7].Pts : null;       // 第8名（出線尾隊）
-  const firstOut = arr.length>8 ? arr[8].Pts : null;  // 第9名（出局首隊）
+  const cut = arr.length>7 ? arr[7].Pts : null;
+  const firstOut = arr.length>8 ? arr[8].Pts : null;
   let h='<tr><th>名</th><th class="l">球隊</th><th>組</th><th>賽</th><th>分</th><th>得失</th><th>入球</th><th>距分界</th><th>結果</th></tr>';
   arr.forEach((d,i)=>{
     const inq=i<8; const cls=inq?"in":"cut";
@@ -1014,7 +955,6 @@ function renderOverview(){
   });
   wrap.innerHTML=h;
 }
-
 /* ===== Tabs / 按鈕 ===== */
 document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
@@ -1029,27 +969,30 @@ document.getElementById('stepNext').addEventListener('click',stepNext);
 document.getElementById('stepReroll').addEventListener('click',stepReroll);
 document.getElementById('stepAll').addEventListener('click',stepAll);
 document.getElementById('stepReset').addEventListener('click',stepReset);
+document.getElementById('scenClose').addEventListener('click',closeScen);
+document.getElementById('scenModal').addEventListener('click',e=>{ if(e.target.id==='scenModal') closeScen(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeScen(); });
 document.getElementById("reset").addEventListener("click",()=>{
-  if(confirm("清空全部已輸入賽果？")){ R={}; KO={}; save(); saveKO(); render(); }
+  if(confirm("清空全部已輸入賽果？")){ R={}; KO={}; SIMP=null; PRED=null; STEPN=0; save(); saveKO(); render(); }
 });
-/* ===== 試算模式（試完唔影響真實賽果）===== */
+/* ===== 試算模式 ===== */
 function setSandbox(on){
   sandbox=on;
   const b=document.getElementById("sbbanner"); if(b) b.style.display=on?"block":"none";
   const btn=document.getElementById("sandbox");
   if(btn){ btn.textContent=on?"↩ 退出試算":"🧪 試算模式"; btn.classList.toggle("prim",on); }
-  if(!on){ // 退出:由儲存還原真實賽果
+  if(!on){
     try{ R=JSON.parse(localStorage.getItem("wc26")||"{}"); }catch(e){ R={}; }
     try{ KO=JSON.parse(localStorage.getItem("wc26ko")||"{}"); }catch(e){ KO={}; }
   }
-  render();
+  SIMP=null; PRED=null; STEPN=0; render();
 }
 document.getElementById("sandbox").addEventListener("click",()=>setSandbox(!sandbox));
 document.getElementById("demo").addEventListener("click",()=>{
-  if(!sandbox) setSandbox(true);           // 示範自動入試算模式,唔會蓋你真實賽果
+  if(!sandbox) setSandbox(true);
   R={}; Object.keys(GROUPS).forEach(g=>{ for(let i=0;i<6;i++){
     R[mid(g,i)]={h:Math.floor(Math.random()*4),a:Math.floor(Math.random()*4)}; }});
-  save(); render();
+  SIMP=null; PRED=null; STEPN=0; save(); render();
 });
 /* ===== 匯出 / 匯入備份 ===== */
 document.getElementById("export").addEventListener("click",()=>{
@@ -1064,14 +1007,12 @@ document.getElementById("importfile").addEventListener("change",e=>{
   const f=e.target.files[0]; if(!f) return;
   const rd=new FileReader();
   rd.onload=()=>{ try{ const d=JSON.parse(rd.result);
-      if(d&&d.R){ R=d.R; KO=d.KO||{}; if(!sandbox){ save(); saveKO(); } render(); alert("匯入完成！"); }
+      if(d&&d.R){ R=d.R; KO=d.KO||{}; SIMP=null; PRED=null; STEPN=0; if(!sandbox){ save(); saveKO(); } render(); alert("匯入完成！"); }
       else alert("檔案入面冇賽果資料。"); }
     catch(err){ alert("檔案格式唔啱，匯入唔到。"); } };
   rd.readAsText(f); e.target.value="";
 });
-
 render();
-// 本機未有資料時,試讀 repo 內 data.json(畀公開網址顯示用;冇就照常空白)
 if(Object.keys(R).length===0){
   fetch("./data.json").then(r=>r.ok?r.json():null).then(d=>{
     if(d&&d.R){ R=d.R; KO=d.KO||{}; render(); }
