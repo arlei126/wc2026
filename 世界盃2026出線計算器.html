@@ -83,7 +83,7 @@
   .scenbtn:hover{border-color:var(--acc2)}
   .modal{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;
     background:rgba(13,17,23,.5);padding:18px}
-  .modalbox{background:var(--panel);border:1px solid var(--line);border-radius:12px;max-width:600px;
+  .modalbox{background:var(--panel);border:1px solid var(--line);border-radius:12px;max-width:900px;
     width:100%;max-height:84vh;overflow:auto;padding:16px 18px 18px;position:relative;box-shadow:0 14px 44px rgba(0,0,0,.28)}
   .modalbox h3{margin:0 28px 10px 0;font-size:16px;color:var(--acc2)}
   .mclose{position:absolute;top:10px;right:10px;width:30px;height:30px;border:1px solid var(--line);
@@ -172,10 +172,41 @@
   table.gdg td.gx{background:rgba(46,160,67,.16);color:var(--acc);font-weight:600}
   table.gdg td.gy{background:rgba(47,109,176,.16);color:var(--blue);font-weight:600}
   table.gdg td.gt{background:rgba(212,167,44,.14);color:var(--gold)}
+  table.gdg td.gout{background:rgba(210,59,59,.13);color:var(--red);font-weight:600}
   table.gdg2 th{font-size:11px;line-height:1.25}
   table.gdg2 th small{font-weight:400;color:var(--mut);font-size:10px}
   table.gdg2 th.corn{font-size:10.5px;color:var(--mut)}
   table.gdg2 td{font-size:14px;font-weight:700;min-width:34px;padding:6px 4px}
+  .scenhelp{font-size:12px;color:var(--mut);line-height:1.6;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 10px;margin:6px 0 10px}
+  .teamScen{border:1px solid var(--line);border-radius:10px;margin:10px 0 14px;overflow:hidden;background:var(--panel)}
+  .teamScenHead{display:flex;gap:8px;justify-content:space-between;align-items:flex-start;background:var(--panel2);padding:9px 10px;font-size:13px;line-height:1.45}
+  .teamScenHead b{color:var(--acc2);font-size:14px}
+  .teamScenHead .meta{color:var(--mut);font-size:11.5px;text-align:right}
+  .scTbl{width:100%;border-collapse:collapse;table-layout:fixed}
+  .scTbl th,.scTbl td{border-bottom:1px solid var(--line);padding:7px 8px;font-size:12px;vertical-align:top}
+  .scTbl th{background:#fafbfc;color:var(--mut);font-weight:600;text-align:left}
+  .scTbl tr:last-child td{border-bottom:none}
+  .scTbl tr.ownStart td{border-top:2px solid var(--line)}
+  .scTbl .own{width:20%;font-weight:700;color:var(--txt)}
+  .scTbl .other{width:28%;color:var(--txt)}
+  .scTbl .rank{width:18%;font-weight:800;text-align:center;border-radius:0}
+  .scTbl .read{width:34%;color:var(--mut);line-height:1.45}
+  .scTbl .read small{display:block;margin-top:2px;color:var(--gold)}
+  .scTbl .gx{background:rgba(46,160,67,.16);color:var(--acc)}
+  .scTbl .gy{background:rgba(47,109,176,.16);color:var(--blue)}
+  .scTbl .gt{background:rgba(212,167,44,.14);color:var(--gold)}
+  .scTbl .gout{background:rgba(210,59,59,.13);color:var(--red)}
+
+  .ruleList{margin:6px 0 8px;padding-left:18px;color:var(--txt);line-height:1.65}
+  .ruleList li{margin:2px 0}
+  .ruleList b{color:var(--acc2)}
+  .ruleList .safe{color:var(--acc);font-weight:700}
+  .ruleList .risk{color:var(--red);font-weight:700}
+  .ruleList .mix{color:var(--gold);font-weight:700}
+  .scoreHint{font-size:11.5px;color:var(--mut);line-height:1.55;margin-top:5px}
+  details.sub[open] summary{border-bottom:1px solid var(--line)}
+  .scMiniTag{display:inline-block;font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:10px;background:var(--panel2);color:var(--mut);margin-left:5px}
+  @media(max-width:680px){.modalbox{padding:13px 12px}.teamScenHead{display:block}.teamScenHead .meta{text-align:left;margin-top:4px}.scTbl th,.scTbl td{padding:6px 5px;font-size:11px}.scTbl .own{width:21%}.scTbl .other{width:27%}.scTbl .rank{width:19%}.scTbl .read{width:33%}}
   /* 機率預測 */
   .pbarwrap{height:6px;background:var(--panel2);border-radius:3px;overflow:hidden;margin-bottom:12px}
   .pbar{height:100%;width:0;background:var(--acc2);transition:width .12s}
@@ -208,10 +239,9 @@
   <div class="bar">
     <button class="act" id="sandbox">🧪 試算模式</button>
     <button class="act" id="demo">填入示範賽果</button>
-    <button class="act" id="export">⬇ 匯出備份</button>
-    <button class="act" id="import">⬆ 匯入</button>
+    <button class="act" id="export">⬇ 匯出 data.json</button>
+    <button class="act prim" id="import">⬆ 匯入（攞 GitHub）</button>
     <button class="act" id="reset">清空全部</button>
-    <input type="file" id="importfile" accept="application/json,.json" style="display:none">
     <span class="sub" id="saved"></span>
   </div>
   <div id="sbbanner" class="sbbanner" style="display:none">🧪 <b>試算模式</b>：而家改嘅嘢淨係試下，<b>唔會儲存</b>。撳「↩ 退出試算」即刻還原你嘅真實賽果。</div>
@@ -282,7 +312,7 @@ const MDNAME = ["第 1 輪","第 1 輪","第 2 輪","第 2 輪","第 3 輪","第
 let R = {};
 let sandbox = false;   // 試算模式:開咗就唔會寫入儲存
 try{ R = JSON.parse(localStorage.getItem("wc26")||"{}"); }catch(e){ R={}; }
-function save(){ try{ if(!sandbox) localStorage.setItem("wc26",JSON.stringify(R)); markSaved(); }catch(e){} }
+function save(){ try{ if(!sandbox){ localStorage.setItem("wc26",JSON.stringify(R)); localStorage.setItem("wc26ts",String(Date.now())); } markSaved(); }catch(e){} }
 function markSaved(){ const s=document.getElementById("saved"); if(!s) return;
   if(sandbox){ s.textContent="🧪 試算中（改動唔會儲存）"; return; }
   const n=Object.keys(R).filter(k=>R[k]&&R[k].h!==""&&R[k].a!=="").length;
@@ -522,7 +552,7 @@ let STEPN=0;     // (保留欄位，已棄用)
 let SCEN={};     // 每組出線情境內容（彈窗用）
 /* 邊場勝方入邊場（畫連接線用） */
 const PARENT={}; for(const m in KO_MATCHES){ KO_MATCHES[m].forEach(s=>{ if(s.MW!==undefined) PARENT[s.MW]=+m; }); }
-function saveKO(){ try{ if(!sandbox) localStorage.setItem("wc26ko",JSON.stringify(KO)); }catch(e){} }
+function saveKO(){ try{ if(!sandbox){ localStorage.setItem("wc26ko",JSON.stringify(KO)); localStorage.setItem("wc26ts",String(Date.now())); } }catch(e){} }
 function koTeam(src){
   if(src.W!==undefined) return rankGroup(src.W).order[0];
   if(src.R!==undefined) return rankGroup(src.R).order[1];
@@ -734,59 +764,236 @@ function tcell(code){ return flag(code)+T[code].zh; }
 function render(){
   renderGroups(); renderThird(); renderOverview(); renderBracket(); markSaved();
 }
+function cmp3b(a,b){ return (a.Pts-b.Pts)||(a.GD-b.GD)||(a.GF-b.GF); }
+/* 某組第3名喺餘下賽果可達嘅最好/最差 (Pts,GD,GF)；餘賽>2 太多就用粗略邊界 */
+function thirdCeilFloor(g2){
+  const codes=GROUPS[g2], rem2=[];
+  for(let i=0;i<6;i++){ const r=getR(g2,i); if(r.h===""||r.a==="") rem2.push(i); }
+  function fm(setMap){ const ms=[]; for(let i=0;i<6;i++){ const H=codes[FIX[i][0]],A=codes[FIX[i][1]],r=getR(g2,i);
+    if(r.h!==""&&r.a!=="") ms.push({h:H,a:A,hg:+r.h,ag:+r.a}); else if(setMap[i]) ms.push({h:H,a:A,hg:setMap[i][0],ag:setMap[i][1]}); } return ms; }
+  function third(setMap){ const rkf=rankFrom(codes,fm(setMap)); const c=rkf.order[2], s=rkf.st[c]; return {Pts:s.Pts,GD:s.GD,GF:s.GF}; }
+  if(rem2.length===0){ const t=third({}); return {ceil:t,floor:t}; }
+  if(rem2.length>2) return {ceil:{Pts:99,GD:99,GF:99}, floor:{Pts:-99,GD:-99,GF:-99}};
+  const Mt=6; let ceil=null,floor=null;
+  (function rec(idx,acc){ if(idx===rem2.length){ const t=third(acc);
+      if(!ceil||cmp3b(t,ceil)>0)ceil=t; if(!floor||cmp3b(t,floor)<0)floor=t; return; }
+    const oi=rem2[idx]; for(let d=-Mt;d<=Mt;d++){ acc[oi]=d>0?[d,0]:d<0?[0,-d]:[0,0]; rec(idx+1,acc); } })(0,{});
+  return {ceil,floor};
+}
 function buildScen(g, S){
-  // 砌出線情境內容（彈窗用），回傳 HTML 字串
-  const cut3team = thirdData()[7] || null;
-  let h='<div class="scnote">📊 跨組「最佳第3名」分界：目前出線尾（第8名第3）係 <b>'+(cut3team?T[cut3team.code].zh+'（'+cut3team.g+'組）'+cut3team.Pts+'分'+sgn(cut3team.GD):'未定')+'</b>。下面每個情境直接寫本組第3名夠唔夠、要幾多球先爭得過呢條線（其他組未踢完前會浮動；得失球啱啱相同時再比總入球）。</div>';
-  const thirdsNow=thirdData();
-  function qual3(g, third, P, gdNow, lastSign){
-    const others=thirdsNow.filter(d=>d.g!==g);
-    if(others.length<8) return {t:'✓暫夠',c:'b-q'};
-    const cut=others[7];
-    const tg=others.every(d=>d.done)?'':'暫';
-    const L='分界 '+T[cut.code].zh+'('+cut.g+') '+cut.Pts+'分'+sgn(cut.GD);
-    if(P>cut.Pts) return {t:'✓'+tg+'入｜'+P+'分 > '+L,c:'b-q'};
-    if(P<cut.Pts) return {t:'✗'+tg+'唔入｜'+P+'分 < '+L,c:'b-out'};
-    if(lastSign===undefined) return {t:'⚠'+tg+'同分（'+L+'），要睇埋最後幾場得失球',c:'b-live'};
-    if(lastSign===0){
-      if(gdNow>cut.GD) return {t:'✓'+tg+'入｜同分，你得失球'+sgn(gdNow)+' > '+L,c:'b-q'};
-      if(gdNow<cut.GD) return {t:'✗'+tg+'唔入｜同分，你得失球'+sgn(gdNow)+' < '+L,c:'b-out'};
-      return {t:'⚠'+tg+'同分又同得失球('+sgn(gdNow)+')，要比總入球',c:'b-live'};
+  // 逐隊列晒：己方 勝/和/負 × 另一場 主勝/和/客勝。
+  // 重要：唔再淨係用 W/D/L 粗略 block，而係枚舉實際比分（得失球 / 入球）去判斷真排名。
+  const codes=GROUPS[g], rk=rankGroup(g), order=rk.order, rem=S.rem, st0=buildStats(g);
+  const TCF={}; Object.keys(GROUPS).forEach(g2=>{ if(g2!==g) TCF[g2]=thirdCeilFloor(g2); });
+  function thirdGuard(pts,gd,gf){ const X={Pts:pts,GD:gd,GF:gf}; let can=0,must=0;
+    Object.keys(TCF).forEach(g2=>{ const t=TCF[g2]; if(cmp3b(t.ceil,X)>=0)can++; if(cmp3b(t.floor,X)>0)must++; });
+    if(can<=7) return 'in'; if(must>=8) return 'out'; return 'maybe'; }
+  function nextMatch(c){ for(const i of rem){ if(codes[FIX[i][0]]===c||codes[FIX[i][1]]===c) return i; } return -1; }
+  function outcomeLabel(i,L){ const H=codes[FIX[i][0]], A=codes[FIX[i][1]];
+    if(L==='H') return T[H].zh+'勝'; if(L==='A') return T[A].zh+'勝'; return '和'; }
+  function ownResultLabel(c,mi,L){ if(L==='D') return T[c].zh+'和'; const home=codes[FIX[mi][0]]===c;
+    const win=(home&&L==='H')||(!home&&L==='A'); return T[c].zh+(win?'勝':'負'); }
+  function comboKey(combo){ return rem.map(i=>i+':'+(combo[i]||'')).join('|'); }
+  function scoreMapToMatches(scoreMap){ const ms=[];
+    for(let i=0;i<6;i++){ const H=codes[FIX[i][0]], A=codes[FIX[i][1]], r=getR(g,i);
+      if(r.h!==''&&r.a!=='') ms.push({h:H,a:A,hg:+r.h,ag:+r.a});
+      else if(scoreMap[i]) ms.push({h:H,a:A,hg:scoreMap[i].hg,ag:scoreMap[i].ag});
     }
-    const need=cut.GD-gdNow+1;
-    if(lastSign>0){
-      if(need<=1) return {t:'✓'+tg+'入｜最後一場贏咗就夠（'+L+'）',c:'b-q'};
-      return {t:'⚠'+tg+'最後一場要淨勝 ≥ '+need+' 球｜同分'+L,c:'b-live'};
-    }
-    const maxLose=gdNow-cut.GD-1;
-    if(maxLose<1) return {t:'✗'+tg+'唔入｜要輸波，得失球追唔上'+L,c:'b-out'};
-    return {t:'⚠'+tg+'最後一場淨負 ≤ '+maxLose+' 球先入｜同分'+L,c:'b-live'};
+    return ms;
   }
-  if(S.n<=3){
-    S.rows.forEach(row=>{
-      const rr=rowResult(row.blocks);
-      let out;
-      if(rr.clean){
-        const outs=outcomesAll(g,row.combo), pts=ptsOf(GROUPS[g],outs), P=pts[rr.third];
-        const stp=buildStats(g);
-        const dec=remInfoFor(g,row.combo,rr.third).filter(r=>r.sign!==0);
-        const lastSign=dec.length===1?dec[0].sign:(dec.length===0?0:undefined);
-        const q=qual3(g,rr.third,P,stp[rr.third].GD,lastSign);
-        out='<b class="qg">出線：'+T[rr.q[0]].zh+'、'+T[rr.q[1]].zh+'</b> ｜ 第3：'+T[rr.third].zh+' '+P+'分 <span class="badge '+q.c+'">'+q.t+'</span>';
-      } else {
-        const sure=rr.sure.map(c=>T[c].zh).join('、');
-        out='<b class="qg">出線：'+(sure?sure+' ＋ ':'')+'</b><span class="gd">'+rr.contest.map(c=>T[c].zh).join(' / ')+' 爭（視得失球）</span>';
-        out += gdContestDetail(g,row.combo,rr.contest);
+  const MAX_MARGIN=12, MAX_BASE=8, MAX_DRAW=8;
+  function scoreOptions(i,L,constraint){
+    const out=[];
+    if(L==='D'){
+      const vals=(constraint&&constraint.kind==='draw')?[constraint.v]:Array.from({length:MAX_DRAW+1},(_,x)=>x);
+      vals.forEach(x=>out.push({hg:x,ag:x,margin:0,base:x,draw:x}));
+      return out;
+    }
+    const margins=(constraint&&constraint.kind==='margin')?[constraint.v]:Array.from({length:MAX_MARGIN},(_,x)=>x+1);
+    margins.forEach(m=>{ for(let low=0;low<=MAX_BASE;low++){
+      if(L==='H') out.push({hg:low+m,ag:low,margin:m,base:low});
+      else out.push({hg:low,ag:low+m,margin:m,base:low});
+    }});
+    return out;
+  }
+  const evCache={};
+  function evalCombo(c,combo,constraints){
+    // 餘賽太多時，避免 modal 爆炸；最後一輪（2場）會精準枚舉比分。
+    if(rem.length>2 && !constraints){
+      const blocks=blocksOf(codes,outcomesAll(g,combo));
+      const b=boundsOf(blocks,c), arr=[]; for(let p=b.best;p<=b.worst;p++) arr.push(p);
+      return {positions:arr,best:b.best,worst:b.worst,exact:b.best===b.worst,coarse:true};
+    }
+    const ck=c+'|'+comboKey(combo)+'|'+(constraints?JSON.stringify(constraints):'ALL');
+    if(evCache[ck]) return evCache[ck];
+    const idxs=Object.keys(combo).map(Number).sort((a,b)=>a-b);
+    const lists=idxs.map(i=>scoreOptions(i,combo[i],constraints&&constraints[i]));
+    const pos={}, scoreMap={}; let cnt=0;
+    function rec(k){
+      if(k===idxs.length){
+        const rr=rankFrom(codes,scoreMapToMatches(scoreMap));
+        const p=rr.order.indexOf(c)+1; pos[p]=1; cnt++; return;
       }
-      h+='<div class="srow"><span class="cond">'+comboText(g,row.combo)+'</span> → '+out+'</div>';
-    });
-  } else {
-    h+='<div class="scnote">情境太多（餘 '+S.n+' 場），未方便逐個列。再入多幾場賽果（淨返 ≤3 場未踢）就會逐個比數結果列出。卡上面「狀態」欄已經係精確計算（已出線／出局係數學上肯定）。</div>';
+      const i=idxs[k];
+      lists[k].forEach(sc=>{ scoreMap[i]=sc; rec(k+1); });
+      delete scoreMap[i];
+    }
+    rec(0);
+    const positions=Object.keys(pos).map(Number).sort((a,b)=>a-b);
+    const ev={positions,best:positions[0],worst:positions[positions.length-1],exact:positions.length===1,count:cnt,coarse:false};
+    evCache[ck]=ev; return ev;
   }
+  function rankClass(ev){ if(ev.worst<=2) return 'gx'; if(ev.best>=4) return 'gout'; if(ev.best<=2&&ev.worst>=3) return 'gy'; return 'gt'; }
+  function rankText(ev){
+    if(ev.exact) return '第'+ev.best;
+    if(ev.worst-ev.best+1===ev.positions.length) return '第'+ev.best+'~'+ev.worst;
+    return ev.positions.map(p=>'第'+p).join(' / ');
+  }
+  function readBase(ev){
+    if(ev.exact){
+      if(ev.best<=2) return '<span class="badge b-q">小組出線</span>';
+      if(ev.best===3) return '<span class="badge b-live">第3｜睇最佳第三</span><small>第3 名仲要同其他組比：分數 → 得失球 → 入球。</small>';
+      return '<span class="badge b-out">小組出局</span>';
+    }
+    const allTop2=ev.positions.every(p=>p<=2), allOut=ev.positions.every(p=>p>=3);
+    if(allTop2) return '<span class="badge b-q">肯定小組出線</span>';
+    if(!allOut) return '<span class="badge b-live">小組出線 或 第3</span>';
+    if(ev.best===3 && ev.worst===4) return '<span class="badge b-live">第3 或 第4</span><small>第3 亦要再睇最佳第三。</small>';
+    return '<span class="badge b-out">小組出局</span>';
+  }
+  function otherCombos(others){
+    if(!others.length) return [{label:'—',set:{}}];
+    let cols=[{label:'',set:{}}];
+    others.forEach(oi=>{
+      const opts=['H','D','A'].map(L=>({lab:outcomeLabel(oi,L),L}));
+      const nx=[];
+      cols.forEach(co=>opts.forEach(o=>nx.push({label:co.label?(co.label+'＋'+o.lab):o.lab, set:Object.assign({},co.set,{[oi]:o.L})})));
+      cols=nx;
+    });
+    return cols;
+  }
+  function teamMarginLabel(c,mi,L,m){
+    if(L==='D') return T[c].zh+'和 '+m+'-'+m;
+    const home=codes[FIX[mi][0]]===c;
+    const win=(home&&L==='H')||(!home&&L==='A');
+    return T[c].zh+(win?'贏':'輸')+m+'球';
+  }
+  function resultWinnerText(i,L){
+    if(L==='D') return '和';
+    const H=codes[FIX[i][0]], A=codes[FIX[i][1]], w=L==='H'?H:A;
+    return T[w].zh+'贏';
+  }
+  function rangeWord(a,b,prefix,tail){
+    if(a===b) return prefix+a+'球'+tail;
+    return prefix+a+'-'+b+'球'+tail;
+  }
+  function runsFrom(items){
+    const runs=[]; let cur=null;
+    items.forEach(it=>{
+      if(!cur || cur.key!==it.key || cur.txt!==it.txt){ if(cur) runs.push(cur); cur={key:it.key,txt:it.txt,a:it.m,b:it.m}; }
+      else cur.b=it.m;
+    });
+    if(cur) runs.push(cur);
+    return runs;
+  }
+  function posKey(ev){
+    const allTop2=ev.positions.every(p=>p<=2), allOut=ev.positions.every(p=>p>=3);
+    if(ev.exact && ev.best<=2) return 'safe';
+    if(ev.exact && ev.best>=3) return 'risk';
+    if(allTop2) return 'safe';
+    if(allOut) return 'risk';
+    return 'mix';
+  }
+  function marginRuleList(c,combo,mi,oi){
+    if(!oi && oi!==0) return '';
+    if(combo[mi]==='D' || combo[oi]==='D') return '';
+    const ownMax=10, otherMax=12;
+    const otherPrefix=resultWinnerText(oi,combo[oi]);
+    let h='<ul class="ruleList">';
+    for(let om=1;om<=ownMax;om++){
+      const items=[];
+      for(let xm=1;xm<=otherMax;xm++){
+        const cons={}; cons[mi]={kind:'margin',v:om}; cons[oi]={kind:'margin',v:xm};
+        const ev=evalCombo(c,combo,cons), key=posKey(ev), txt=rankText(ev);
+        items.push({m:xm,key,txt});
+      }
+      const runs=runsFrom(items);
+      const parts=runs.map(r=>{
+        const cls=r.key==='safe'?'safe':(r.key==='risk'?'risk':'mix');
+        const label=(r.b===otherMax)?(otherPrefix+r.a+'球或以上'):(r.a===r.b?otherPrefix+r.a+'球':otherPrefix+r.a+'-'+r.b+'球');
+        return '<span class="'+cls+'">'+label+' → '+r.txt+'</span>';
+      });
+      h+='<li><b>'+teamMarginLabel(c,mi,combo[mi],om)+'</b>：'+parts.join('；')+'</li>';
+    }
+    h+='</ul>';
+    return h;
+  }
+  function scoreDetail(c,combo,mi,ev){
+    if(ev.exact) return '';
+    if(rem.length>2) return '<small>餘下超過一輪，暫時只能列勝和負範圍；去到最後一輪會自動拆埋得失球／入球。</small>';
+    const oi=rem.find(i=>i!==mi);
+    let h='<details class="sub" open><summary>🔍 按實際比分拆開</summary><div class="subbox">';
+    const rules=marginRuleList(c,combo,mi,oi);
+    if(rules) h+=rules;
+    else h+='<div class="scoreHint">呢個情況要逐個實際比分計；程式已用 0-8 入球、1-12 球差枚舉。見到「'+rankText(ev)+'」即係唔同比分會出唔同排名。</div>';
+    h+='<div class="scoreHint">黃／範圍格代表同分後仍要比總得失球或總入球；如仍完全相同，先再比紀律分 / FIFA 排名。</div>';
+    h+='</div></details>';
+    return h;
+  }
+  function entrySignature(e){
+    // 精準同一結論先合併；有比分 detail 就唔亂合併，避免遮住條件。
+    if(e.detail) return e.label+'|'+e.rank+'|D';
+    return e.rank+'|'+e.read.replace(/<[^>]+>/g,'');
+  }
+  let h='<div class="scenhelp">已改成：先用勝和負篩走無關情境；如果某個結果已經無視另一場，就會合併做「任何結果」。凡係會受比分影響，會直接展開「輸/贏幾多球 → 最終第幾」，唔再停喺「第1~2 要靠比分」呢啲廢話。</div>';
+
+  order.forEach(c=>{
+    const sb=S.status[c], mi=nextMatch(c);
+    if(mi<0){
+      const pos=order.indexOf(c)+1, s=st0[c];
+      h+='<div class="teamScen"><div class="teamScenHead"><b>'+flag(c)+T[c].zh+'</b><span class="meta">沒有餘下賽事</span></div><div class="scnote" style="padding:9px 10px">';
+      if(pos<=2) h+='已踢完 → 第'+pos+' <span class="badge b-q">小組出線</span>';
+      else if(pos===3){ const tg=thirdGuard(s.Pts,s.GD,s.GF);
+        h+='已踢完 → 第3，'+(tg==='in'?'<span class="badge b-q">穩入最佳第三</span>':tg==='out'?'<span class="badge b-out">爭唔到最佳第三</span>':'<span class="badge b-live">要睇其他組</span>'); }
+      else h+='已踢完 → 第4 <span class="badge b-out">出局</span>';
+      h+='</div></div>'; return;
+    }
+    const home=codes[FIX[mi][0]]===c, opp=home?codes[FIX[mi][1]]:codes[FIX[mi][0]];
+    const others=rem.filter(i=>i!==mi);
+    const otherText=others.length ? others.map(i=>T[codes[FIX[i][0]]].zh+' vs '+T[codes[FIX[i][1]]].zh).join('、') : '沒有另一場';
+    const cols=otherCombos(others);
+    const ownRows=[['勝',home?'H':'A'],['和','D'],['負',home?'A':'H']];
+    h+='<div class="teamScen"><div class="teamScenHead"><div><b>'+flag(c)+T[c].zh+'</b>'+(sb&&sb.badge?' <span class="badge '+sb.cls+'">'+sb.badge+'</span>':'')+'</div>'
+      +'<div class="meta">最後對 '+T[opp].zh+'｜另一場：'+otherText+'</div></div>';
+    h+='<table class="scTbl"><tr><th class="own">'+T[c].zh+'結果</th><th class="other">另一場結果</th><th class="rank">最終排名</th><th class="read">解讀</th></tr>';
+    ownRows.forEach(([olab,oL])=>{
+      const raw=cols.map(co=>{
+        const combo=Object.assign({},co.set,{[mi]:oL});
+        const ev=evalCombo(c,combo);
+        const detail=scoreDetail(c,combo,mi,ev);
+        return {label:co.label||'—',ev,rank:rankText(ev),cls:rankClass(ev),read:readBase(ev)+detail,detail};
+      });
+      let entries=[];
+      const allSame=raw.length>1 && raw.every(x=>entrySignature(x)===entrySignature(raw[0]));
+      if(allSame){ entries=[Object.assign({},raw[0],{label:'任何結果'})]; }
+      else{
+        raw.forEach(x=>{
+          const sig=entrySignature(x), last=entries[entries.length-1];
+          if(last && !x.detail && !last.detail && last._sig===sig) last.label += ' / '+x.label;
+          else entries.push(Object.assign({_sig:sig},x));
+        });
+      }
+      entries.forEach((e,idx)=>{
+        h+='<tr class="'+(idx===0?'ownStart':'')+'"><td class="own">'+ownResultLabel(c,mi,oL)+'</td><td class="other">'+e.label+'</td><td class="rank '+e.cls+'">'+e.rank+'</td><td class="read">'+e.read+'</td></tr>';
+      });
+    });
+    h+='</table></div>';
+  });
   return h;
 }
 function openScen(g){
-  document.getElementById('scenBody').innerHTML = '<h3>'+g+' 組 · 出線情境</h3>' + (SCEN[g]||'冇情境');
+  const S=groupScenario(g);
+  document.getElementById('scenBody').innerHTML = '<h3>'+g+' 組 · 逐隊出線可能</h3>' + buildScen(g,S);
   document.getElementById('scenModal').style.display='flex';
 }
 function closeScen(){ document.getElementById('scenModal').style.display='none'; }
@@ -848,10 +1055,9 @@ function renderGroups(){
     order.forEach(c=>{ const sb=S.status[c]; if(sb.badge && sb.badge!=='出線未定'){
       chips+='<span class="schip '+sb.cls+'">'+flag(c)+T[c].zh+' '+sb.badge+'</span>'; }});
     if(chips) h+='<div class="chips">'+chips+'</div>';
-    // 出線情境：改成按鈕，彈窗顯示（唔再撐開卡，版面唔會郁）
+    // 出線情境：撳開先計，逐隊列可能（彈窗）
     if(S.n>0){
-      SCEN[g]=buildScen(g,S);
-      h+='<button class="scenbtn" data-g="'+g+'">🔢 出線情境（餘 '+S.n+' 場 · 共 '+S.total+' 種結果）▸ 撳開</button>';
+      h+='<button class="scenbtn" data-g="'+g+'">🔢 出線情境（餘 '+S.n+' 場）▸ 逐隊睇</button>';
     }
     h+='</div>';
   });
@@ -924,7 +1130,9 @@ document.getElementById('scenClose').addEventListener('click',closeScen);
 document.getElementById('scenModal').addEventListener('click',e=>{ if(e.target.id==='scenModal') closeScen(); });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeScen(); });
 document.getElementById("reset").addEventListener("click",()=>{
-  if(confirm("清空全部已輸入賽果？")){ R={}; KO={}; SIMP=null; PRED=null; STEPN=0; save(); saveKO(); render(); }
+  if(confirm("清空全部已輸入賽果？")){ R={}; KO={}; SIMP=null; PRED=null; STEPN=0;
+    try{ localStorage.setItem("wc26ts",String(Date.now())); }catch(e){}
+    save(); saveKO(); render(); }
 });
 /* ===== 試算模式 ===== */
 function setSandbox(on){
@@ -947,28 +1155,43 @@ document.getElementById("demo").addEventListener("click",()=>{
 });
 /* ===== 匯出 / 匯入備份 ===== */
 document.getElementById("export").addEventListener("click",()=>{
-  const data=JSON.stringify({v:1,R:R,KO:KO});
+  const data=JSON.stringify({v:1,ts:Date.now(),R:R,KO:KO});
   const blob=new Blob([data],{type:"application/json"});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
-  a.download="wc2026-data.json"; document.body.appendChild(a); a.click();
+  a.download="data.json"; document.body.appendChild(a); a.click();
   setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },100);
 });
-document.getElementById("import").addEventListener("click",()=>document.getElementById("importfile").click());
-document.getElementById("importfile").addEventListener("change",e=>{
-  const f=e.target.files[0]; if(!f) return;
-  const rd=new FileReader();
-  rd.onload=()=>{ try{ const d=JSON.parse(rd.result);
-      if(d&&d.R){ R=d.R; KO=d.KO||{}; SIMP=null; PRED=null; STEPN=0; if(!sandbox){ save(); saveKO(); } render(); alert("匯入完成！"); }
-      else alert("檔案入面冇賽果資料。"); }
-    catch(err){ alert("檔案格式唔啱，匯入唔到。"); } };
-  rd.readAsText(f); e.target.value="";
+/* ===== GitHub raw 來源（撳「匯入」直接攞，唔自動拉、唔揀本機檔）===== */
+const GH_USER="arlei126", GH_REPO="wc2026", GH_FILE="data.json";
+function rawURL(branch){ return "https://raw.githubusercontent.com/"+GH_USER+"/"+GH_REPO+"/"+branch+"/"+GH_FILE+"?t="+Date.now(); }
+function fetchRemote(){
+  return fetch(rawURL("main"),{cache:"no-store"})
+    .then(r=>r.ok?r.json():fetch(rawURL("master"),{cache:"no-store"}).then(r2=>r2.ok?r2.json():null))
+    .catch(()=>fetch(rawURL("master"),{cache:"no-store"}).then(r2=>r2.ok?r2.json():null).catch(()=>null));
+}
+function applyRemote(d){
+  if(!d||!d.R) return false;
+  R=d.R; KO=d.KO||{};
+  try{
+    localStorage.setItem("wc26",JSON.stringify(R));
+    localStorage.setItem("wc26ko",JSON.stringify(KO));
+    localStorage.setItem("wc26ts",String(d.ts||Date.now()));
+  }catch(e){}
+  return true;
+}
+function ghStatus(msg){ const s=document.getElementById('saved'); if(s) s.textContent=msg; }
+function ghTime(d){ return d.ts?('（'+new Date(d.ts).toLocaleString('zh-HK')+'）'):''; }
+// 撳「匯入」= 直接由 GitHub 攞 data.json 覆蓋（會問一次確認）
+document.getElementById("import").addEventListener("click",()=>{
+  if(sandbox){ alert("而家係試算模式，請先退出試算先匯入。"); return; }
+  if(Object.keys(R).length>0 && !confirm("由 GitHub 攞最新 data.json，會覆蓋你目前喺呢部機嘅賽果。確定？")) return;
+  ghStatus('⬆ 由 GitHub 攞緊…');
+  fetchRemote().then(d=>{
+    if(!d||!d.R){ alert("攞唔到 GitHub 個 data.json。\\n檢查：① repo arlei126/wc2026 係咪 public　② data.json 喺咪根目錄　③ branch 係 main 定 master　④ 已 push 上去。"); ghStatus('⬆ 匯入失敗'); return; }
+    applyRemote(d); SIMP=null; render(); ghStatus('⬆ 已由 GitHub 匯入'+ghTime(d)); alert("匯入完成！");
+  }).catch(()=>{ alert("匯入失敗（網絡或 CORS）。"); ghStatus('⬆ 匯入失敗'); });
 });
 render();
-if(Object.keys(R).length===0){
-  fetch("./data.json").then(r=>r.ok?r.json():null).then(d=>{
-    if(d&&d.R){ R=d.R; KO=d.KO||{}; render(); }
-  }).catch(()=>{});
-}
 </script>
 </body>
 </html>
