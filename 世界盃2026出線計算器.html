@@ -107,6 +107,8 @@
   .big tr.locked td{font-weight:600}
   .big tr.locked td:first-child{border-left:5px solid var(--acc)}
   .big tr.locked .badge{box-shadow:0 0 0 2px rgba(46,160,67,.25)}
+  .big th.th3sort:hover{color:var(--acc)}
+  .big th.th3sort.on{color:var(--acc)}
   .big tr.cut td{color:var(--mut)}
   .cutline td{padding:0;height:0}
   .cutline div{border-top:2px dashed var(--red);margin:3px 0;position:relative}
@@ -261,8 +263,19 @@
 <main>
   <section class="view on" id="v-groups"><div class="grid" id="groups"></div></section>
   <section class="view" id="v-third">
-    <div class="note">下表將 12 個小組第 3 名排晒一齊，<b>頭 8 名（綠色）只代表目前暫列出線</b>，紅色虛線以下 4 隊暫列淘汰。<b>見到「🔒鎖定出線」先係數學上肯定</b>；未踢完嘅組仍可能令分界線改變。</div>
+    <div class="note">下表將 12 個小組第 3 名排晒一齊，<b>頭 8 名（綠色）只代表目前暫列出線</b>，紅色虛線以下 4 隊暫列淘汰。<b>見到「🔒鎖定出線」先係數學上肯定</b>；未踢完嘅組仍可能令分界線改變。<b>出線機率睇返下面嗰個榜</b>——嗰個會連而家排第2/第4、有機會變第3嘅隊都一齊計，唔淨止計目前排第三。</div>
+    <div class="bar" style="margin:0 0 8px">
+      <button class="act prim" id="third3Run">🎲 計最佳第三出線機率</button>
+      <select id="third3N" class="act">
+        <option value="2000">2000 次（快）</option>
+        <option value="5000" selected>5000 次</option>
+        <option value="10000">10000 次（準啲）</option>
+      </select>
+      <span class="sub" id="third3Stat">機率＝模擬「以第3名出線」嘅比率（≠ 直接攞組首/組次）。改賽果後要重計。</span>
+    </div>
+    <div class="pbarwrap"><div id="third3Bar" class="pbar"></div></div>
     <div class="wrap"><table class="big" id="thirdTbl"></table></div>
+    <div id="third3Prob"></div>
   </section>
   <section class="view" id="v-overview">
     <div class="note"><b>出線總表</b>：每組首 2 名 ＋ 8 隊最佳第 3 名 ＝ 32 隊晉級。未踢完嘅以目前賽果即時推算（會跟住你輸入更新）。</div>
@@ -723,21 +736,32 @@ function runSim(N){
   if(simRunning) return; simRunning=true;
   const acc={}; let done=0; const t0=(performance&&performance.now)?performance.now():Date.now();
   const btn=document.getElementById('simRun'), bar=document.getElementById('simBar'), stat=document.getElementById('simStat');
-  if(btn) btn.disabled=true;
+  const btn2=document.getElementById('third3Run'), bar2=document.getElementById('third3Bar'), stat2=document.getElementById('third3Stat');
+  if(btn) btn.disabled=true; if(btn2) btn2.disabled=true;
   (function chunk(){
     const end=Math.min(done+400,N);
     for(;done<end;done++) simOnce(acc);
-    if(bar) bar.style.width=Math.round(done/N*100)+'%';
+    const pct=Math.round(done/N*100);
+    if(bar) bar.style.width=pct+'%'; if(bar2) bar2.style.width=pct+'%';
     if(stat) stat.textContent='模擬中… '+done+' / '+N;
+    if(stat2) stat2.textContent='模擬中… '+done+' / '+N;
     if(done<N) setTimeout(chunk,0);
-    else { simRunning=false; if(btn)btn.disabled=false;
+    else { simRunning=false; if(btn)btn.disabled=false; if(btn2)btn2.disabled=false;
       const ms=((performance&&performance.now)?performance.now():Date.now())-t0;
       renderSim(acc,N,ms); }
   })();
 }
 function pcell(p,gold,strong){ const s = p>=99.5?'>99' : (p<=0?'·' : (p<0.5?'<1':Math.round(p)));
   return '<div class="pcell'+(gold?' cgold':'')+(strong?' cstrong':'')+'"><span style="width:'+Math.min(100,p)+'%"></span><i>'+s+'</i></div>'; }
-function fmtPct(frac){ const p=100*frac; return p>=10?Math.round(p)+'%' : p>=1?p.toFixed(1)+'%' : p>0?'<1%':'—'; }
+function fmtPct(frac,certain){
+  if(certain===undefined) certain=true;
+  const p=100*frac;
+  if(!certain){
+    if(p>=99.5) return '>99%';
+    if(p>0 && p<0.5) return '<1%';
+  }
+  return p>=99.95?'100%' : p>=10?Math.round(p)+'%' : p>=1?p.toFixed(1)+'%' : p>0?'<1%':'—';
+}
 function renderSim(acc,N,ms){
   const D={p1:0,p2:0,p3q:0,r32:0,r16:0,qf:0,sf:0,fin:0,ch:0};
   SIMP={};
@@ -759,13 +783,17 @@ function renderSim(acc,N,ms){
   document.getElementById('simOut').innerHTML=h;
   const stat=document.getElementById('simStat');
   if(stat) stat.textContent='完成 '+N+' 次（'+(ms/1000).toFixed(1)+'秒）。小組未踢完，下表頭四欄＝每隊排第幾／出線嘅機率（組首＋組次＋第3出線＝總出線）；後面係淘汰賽各圈。改賽果後要重新計。';
+  renderThird();
+  renderThird3Prob();
+  const stat2=document.getElementById('third3Stat');
+  if(stat2) stat2.textContent='完成 '+N+' 次（'+(ms/1000).toFixed(1)+'秒）。「出線機率」＝模擬中該隊以第3名躋身最佳8強嘅比率。改賽果後要重計。';
 }
 /* ===== 渲染 ===== */
 function flag(code){ return '<img class="flag" loading="lazy" alt="" src="https://flagcdn.com/'
   +T[code].iso+'.svg" onerror="this.style.visibility=\'hidden\'">'; }
 function tcell(code){ return flag(code)+T[code].zh; }
 function render(){
-  renderGroups(); renderThird(); renderOverview(); renderBracket(); markSaved();
+  renderGroups(); renderThird(); renderThird3Prob(); renderOverview(); renderBracket(); markSaved();
 }
 function cmp3b(a,b){ return (a.Pts-b.Pts)||(a.GD-b.GD)||(a.GF-b.GF); }
 /* 某組第3名喺餘下賽果可達嘅最好/最差 (Pts,GD,GF)；餘賽>2 太多就用粗略邊界 */
@@ -1245,6 +1273,53 @@ function renderThird(){
   });
   tbl.innerHTML=h;
 }
+let TH3SORT={key:'p3q',dir:-1};
+function renderThird3Prob(){
+  const box=document.getElementById('third3Prob'); if(!box) return;
+  if(!SIMP){ box.innerHTML=''; return; }
+  // 收集所有 p3q>0 嘅球隊（唔限於目前排第三）
+  const rows=[];
+  const allDone=thirdData().every(x=>x.done);
+  const clinch={}; // 每組已鎖前二（已出線/篤定首名）嘅球隊
+  for(const g in GROUPS){ const S=groupScenario(g);
+    GROUPS[g].forEach(c=>{ const bd=S.status[c]&&S.status[c].badge; clinch[c]=(bd==='已出線'||bd==='篤定首名'); }); }
+  for(const g in GROUPS){ const ord=rankGroup(g).order;
+    GROUPS[g].forEach(c=>{ const p=(SIMP[c]&&SIMP[c].p3q)||0; if(p>0){
+      const pos=ord.indexOf(c)+1;
+      const st=rankGroup(g).st[c];
+      const lockThird = pos===3 && bestThirdLockInfo({g,code:c,P:st.P,Pts:st.Pts,GD:st.GD,GF:st.GF,done:st.P===3}).locked;
+      rows.push({c,g,pos,p3q:p,
+        total:((SIMP[c].p1||0)+(SIMP[c].p2||0)+(SIMP[c].p3q||0)),
+        totalCertain: allDone||clinch[c]||lockThird,
+        p3qCertain: allDone||lockThird}); } }); }
+  if(!rows.length){ box.innerHTML='<div class="note" style="margin-top:14px">目前冇任何球隊有以第3名出線嘅機會。</div>'; return; }
+  const k=TH3SORT.key, dir=TH3SORT.dir;
+  const val=(r)=> k==='team'?T[r.c].zh : k==='group'?r.g : r[k];
+  rows.sort((a,b)=>{ const x=val(a), y=val(b); let d;
+    if(typeof x==='string') d=x.localeCompare(y,'zh-Hant'); else d=x-y;
+    if(d===0) d=b.p3q-a.p3q || b.total-a.total; return d*dir; });
+  const cols=[['team','球隊','l'],['group','組',''],['pos','現排名',''],['p3q','以第3名出線機率',''],['total','埋尾任何方式出線','']];
+  const arrow=key=> key===TH3SORT.key ? (TH3SORT.dir<0?' ▾':' ▴') : '';
+  let h='<div class="note" style="margin-top:16px"><b>邊啲球隊有機會以「最佳第3名」出線</b>（模擬計算，<b>唔淨止計目前排第3嗰隊</b>——而家排第2會跌落第3、排第4會爬上第3，全部一齊計）。「現排名」係小組目前位置。<b>撳欄頭排序</b>，再撳一下調轉升／降。<br>機率見到「<b>&gt;99%</b>」即係模擬幾乎次次出線、但<b>數學上仲未鎖死</b>（理論上可以被同組大炒＋第三名分界線爆冷而出唔到）；要真正肯定先會顯示 <b>100%</b>。</div>';
+  h+='<div class="wrap"><table class="big"><tr>'
+    + cols.map(c=>'<th class="th3sort'+(c[2]?' '+c[2]:'')+(c[0]===TH3SORT.key?' on':'')+'" data-k="'+c[0]+'" style="cursor:pointer;user-select:none">'+c[1]+arrow(c[0])+'</th>').join('')
+    + '</tr>';
+  rows.forEach(r=>{
+    const col = r.p3q>=0.5?'var(--acc)':r.p3q>=0.2?'var(--gold)':'var(--mut)';
+    h+='<tr class="'+(r.pos===3?'in':'')+'"><td class="l">'+tcell(r.c)+'</td><td>'+r.g+'</td>'
+      +'<td>第'+r.pos+'</td>'
+      +'<td><b style="color:'+col+'">'+fmtPct(r.p3q,r.p3qCertain)+'</b></td>'
+      +'<td><span style="color:var(--mut)">'+fmtPct(r.total,r.totalCertain)+'</span></td></tr>';
+  });
+  h+='</table></div>';
+  box.innerHTML=h;
+  box.querySelectorAll('.th3sort').forEach(th=>th.addEventListener('click',()=>{
+    const key=th.dataset.k;
+    if(TH3SORT.key===key) TH3SORT.dir*=-1;
+    else TH3SORT={key, dir:(key==='team'||key==='group'||key==='pos')?1:-1};
+    renderThird3Prob();
+  }));
+}
 function renderOverview(){
   const third=thirdData(); const top8=third.slice(0,8).map(d=>d.code);
   const wrap=document.getElementById("overview"); let h="";
@@ -1275,6 +1350,7 @@ document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
 }));
 window.addEventListener('resize',()=>{ const v=document.getElementById('v-bracket'); if(v&&v.classList.contains('on')) drawConnectors(); });
 document.getElementById('simRun').addEventListener('click',()=>runSim(+document.getElementById('simN').value));
+document.getElementById('third3Run').addEventListener('click',()=>runSim(+document.getElementById('third3N').value));
 document.getElementById('scenClose').addEventListener('click',closeScen);
 document.getElementById('scenModal').addEventListener('click',e=>{ if(e.target.id==='scenModal') closeScen(); });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeScen(); });
