@@ -83,7 +83,7 @@
   .scenbtn:hover{border-color:var(--acc2)}
   .modal{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;
     background:rgba(13,17,23,.5);padding:18px}
-  .modalbox{background:var(--panel);border:1px solid var(--line);border-radius:12px;max-width:900px;
+  .modalbox{background:var(--panel);border:1px solid var(--line);border-radius:12px;max-width:600px;
     width:100%;max-height:84vh;overflow:auto;padding:16px 18px 18px;position:relative;box-shadow:0 14px 44px rgba(0,0,0,.28)}
   .modalbox h3{margin:0 28px 10px 0;font-size:16px;color:var(--acc2)}
   .mclose{position:absolute;top:10px;right:10px;width:30px;height:30px;border:1px solid var(--line);
@@ -101,8 +101,12 @@
   .big th,.big td{padding:8px 10px;font-size:13px;border-bottom:1px solid var(--line);text-align:center}
   .big th{color:var(--mut);font-weight:500;position:sticky;top:0;background:var(--panel)}
   .big td.l{text-align:left}
-  .big tr.in{background:rgba(46,160,67,.12)}
-  .big tr.in td:first-child{border-left:3px solid var(--acc)}
+  .big tr.in{background:rgba(46,160,67,.07)}
+  .big tr.in td:first-child{border-left:3px solid rgba(46,160,67,.35)}
+  .big tr.locked{background:rgba(46,160,67,.20)}
+  .big tr.locked td{font-weight:600}
+  .big tr.locked td:first-child{border-left:5px solid var(--acc)}
+  .big tr.locked .badge{box-shadow:0 0 0 2px rgba(46,160,67,.25)}
   .big tr.cut td{color:var(--mut)}
   .cutline td{padding:0;height:0}
   .cutline div{border-top:2px dashed var(--red);margin:3px 0;position:relative}
@@ -196,7 +200,6 @@
   .scTbl .gy{background:rgba(47,109,176,.16);color:var(--blue)}
   .scTbl .gt{background:rgba(212,167,44,.14);color:var(--gold)}
   .scTbl .gout{background:rgba(210,59,59,.13);color:var(--red)}
-
   .ruleList{margin:6px 0 8px;padding-left:18px;color:var(--txt);line-height:1.65}
   .ruleList li{margin:2px 0}
   .ruleList b{color:var(--acc2)}
@@ -206,7 +209,7 @@
   .scoreHint{font-size:11.5px;color:var(--mut);line-height:1.55;margin-top:5px}
   details.sub[open] summary{border-bottom:1px solid var(--line)}
   .scMiniTag{display:inline-block;font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:10px;background:var(--panel2);color:var(--mut);margin-left:5px}
-  @media(max-width:680px){.modalbox{padding:13px 12px}.teamScenHead{display:block}.teamScenHead .meta{text-align:left;margin-top:4px}.scTbl th,.scTbl td{padding:6px 5px;font-size:11px}.scTbl .own{width:21%}.scTbl .other{width:27%}.scTbl .rank{width:19%}.scTbl .read{width:33%}}
+  @media(max-width:680px){.teamScenHead{display:block}.teamScenHead .meta{text-align:left;margin-top:4px}.scTbl th,.scTbl td{padding:6px 5px;font-size:11px}}
   /* 機率預測 */
   .pbarwrap{height:6px;background:var(--panel2);border-radius:3px;overflow:hidden;margin-bottom:12px}
   .pbar{height:100%;width:0;background:var(--acc2);transition:width .12s}
@@ -258,7 +261,7 @@
 <main>
   <section class="view on" id="v-groups"><div class="grid" id="groups"></div></section>
   <section class="view" id="v-third">
-    <div class="note">下表將 12 個小組第 3 名排晒一齊，<b>頭 8 名（綠色）出線</b>，紅色虛線以下 4 隊淘汰。要全部小組賽行晒先準。</div>
+    <div class="note">下表將 12 個小組第 3 名排晒一齊，<b>頭 8 名（綠色）只代表目前暫列出線</b>，紅色虛線以下 4 隊暫列淘汰。<b>見到「🔒鎖定出線」先係數學上肯定</b>；未踢完嘅組仍可能令分界線改變。</div>
     <div class="wrap"><table class="big" id="thirdTbl"></table></div>
   </section>
   <section class="view" id="v-overview">
@@ -883,10 +886,6 @@ function buildScen(g, S){
     const H=codes[FIX[i][0]], A=codes[FIX[i][1]], w=L==='H'?H:A;
     return T[w].zh+'贏';
   }
-  function rangeWord(a,b,prefix,tail){
-    if(a===b) return prefix+a+'球'+tail;
-    return prefix+a+'-'+b+'球'+tail;
-  }
   function runsFrom(items){
     const runs=[]; let cur=null;
     items.forEach(it=>{
@@ -904,29 +903,110 @@ function buildScen(g, S){
     if(allOut) return 'risk';
     return 'mix';
   }
+  function clsOfText(txt){ const ps=(txt.match(/\d+/g)||[]).map(Number);
+    if(ps.every(p=>p<=2)) return 'safe'; if(ps.every(p=>p>=3)) return 'risk'; return 'mix'; }
+  function rkAt(c,combo,mi,oi,a,b){ const cons={}; cons[mi]={kind:'margin',v:a}; cons[oi]={kind:'margin',v:b};
+    return rankText(evalCombo(c,combo,cons)); }
+  function keyRuns(map){ const ks=Object.keys(map).map(Number).sort((x,y)=>x-y);
+    const runs=[]; let cur={a:ks[0],b:ks[0],r:map[ks[0]]};
+    for(let i=1;i<ks.length;i++){ const k=ks[i];
+      if(map[k]===cur.r && k===cur.b+1) cur.b=k; else { runs.push(cur); cur={a:k,b:k,r:map[k]}; } }
+    runs.push(cur); return runs; }
   function marginRuleList(c,combo,mi,oi){
     if(!oi && oi!==0) return '';
     if(combo[mi]==='D' || combo[oi]==='D') return '';
     const ownMax=10, otherMax=12;
+    // 先攞成個 grid（己方球差 a × 另一場球差 b → 名次）
+    const grid={}; for(let a=1;a<=ownMax;a++){ grid[a]={}; for(let b=1;b<=otherMax;b++) grid[a][b]=rkAt(c,combo,mi,oi,a,b); }
+    const ownWord=((combo[mi]==='H')===(codes[FIX[mi][0]]===c))?'淨勝':'淨負';
+    const ownTerm=T[c].zh+ownWord;
+    const oWin=combo[oi]==='H'?codes[FIX[oi][0]]:codes[FIX[oi][1]];
+    const otherTerm=T[oWin].zh+'淨勝';
+    // 得失球打平嗰刻，再比總入球：搵同 Pts 同 GD 嘅對手，俾返入球條件
+    function tiedRivals(a,b){
+      const sc={}; sc[mi]=combo[mi]==='H'?{hg:a,ag:0}:{hg:0,ag:a}; sc[oi]=combo[oi]==='H'?{hg:b,ag:0}:{hg:0,ag:b};
+      const ms=[]; for(let i=0;i<6;i++){ const H=codes[FIX[i][0]],A=codes[FIX[i][1]],r=getR(g,i);
+        if(r.h!==''&&r.a!=='') ms.push({h:H,a:A,hg:+r.h,ag:+r.a}); else if(sc[i]) ms.push({h:H,a:A,hg:sc[i].hg,ag:sc[i].ag}); }
+      const st=buildStatsFrom(codes,ms), me=st[c];
+      return {st, rivals:codes.filter(x=>x!==c&&st[x].Pts===me.Pts&&st[x].GD===me.GD)};
+    }
+    function gfClause(a,b,rText){
+      const ps=(rText.match(/\d+/g)||[]).map(Number); if(ps.length<2) return '';
+      const hi='第'+Math.min.apply(null,ps), lo='第'+Math.max.apply(null,ps);
+      const {st,rivals}=tiedRivals(a,b); if(rivals.length!==1){
+        if(!rivals.length) return '';
+        return '<div class="scoreHint">└ 得失球打平時，再比總入球：'+[c].concat(rivals).map(x=>T[x].zh+'('+st0[x].GF+'球)').join('、')+' 多者排前。</div>'; }
+      const Y=rivals[0], yRem=[mi,oi].some(i=>codes[FIX[i][0]]===Y||codes[FIX[i][1]]===Y);
+      if(!yRem) return '<div class="scoreHint">└ 得失球打平時：'+T[c].zh+' 最後總入球 ≥ '+(st[Y].GF+1)+' 球 → '+hi+'；≤ '+(st[Y].GF-1)+' → '+lo+'；＝'+st[Y].GF+' 比紀律分。（'+T[Y].zh+' 固定 '+st[Y].GF+' 球）</div>';
+      return '<div class="scoreHint">└ 得失球打平時，比總入球：'+T[c].zh+'（現 '+st0[c].GF+' 球）同 '+T[Y].zh+'（現 '+st0[Y].GF+' 球），埋尾入多者 '+hi+'、少者 '+lo+'。</div>';
+    }
+    // 試吓個名次淨係睇某條規律（差／和／單邊）
+    function tryAxis(keyOf){ const map={};
+      for(let a=1;a<=ownMax;a++)for(let b=1;b<=otherMax;b++){ const k=keyOf(a,b), r=grid[a][b];
+        if(k in map){ if(map[k]!==r) return null; } else map[k]=r; }
+      return map; }
+    function emit(runs, render, clauseOf){ // runs 由細到大；render(run,isTop,isBot)
+      const maxK=Math.max.apply(null,runs.map(r=>r.b)), minK=Math.min.apply(null,runs.map(r=>r.a));
+      return '<ul class="ruleList">'+runs.slice().sort((x,y)=>y.a-x.a).map(r=>{
+        const cond=render(r, r.b===maxK, r.a===minK);
+        const extra=(clauseOf && /[~\/]/.test(r.r))?clauseOf(r):'';
+        return '<li><span class="'+clsOfText(r.r)+'">'+cond+' → '+r.r+'</span>'+extra+'</li>';
+      }).join('')+'</ul>'; }
+    // ① 差（a−b）：最常見，例如「巴西淨負 比 海地淨勝 多 N 球」
+    let map=tryAxis((a,b)=>a-b);
+    if(map && Object.keys(map).length>1){
+      const more=n=> n>0?('多 '+n+' 球'): n===0?'一樣多':('少 '+(-n)+' 球');
+      const clause=r=>{ const d=r.a, a=Math.max(1,1+d), b=a-d; return gfClause(a,b,r.r); };
+      return '<div class="scoreHint">規律：睇 <b>'+ownTerm+'</b> 比 <b>'+otherTerm+'</b> 多幾多球。</div>'
+        +emit(keyRuns(map),(r,top,bot)=>{
+          if(top) return ownTerm+' 比 '+otherTerm+'　'+(r.a>0?('多 '+r.a+' 球或以上'):r.a===0?'一樣多或更多':('唔少過「少 '+(-r.a)+' 球」'));
+          if(bot) return '其餘（'+ownTerm+' 追得貼／反勝）';
+          return ownTerm+' 比 '+otherTerm+'　'+(r.a===r.b?more(r.a):('多 '+r.a+'–'+r.b+' 球'));
+        }, clause);
+    }
+    // ② 和（a＋b）：例如「兩場合共淨球差 N 以上」
+    map=tryAxis((a,b)=>a+b);
+    if(map && Object.keys(map).length>1){
+      return '<div class="scoreHint">規律：睇 <b>'+ownTerm+'</b> 同 <b>'+otherTerm+'</b> 兩場合共幾多球。</div>'
+        +emit(keyRuns(map),(r,top,bot)=>{
+          if(top) return ownTerm+' ＋ '+otherTerm+' 合共 '+r.a+' 球或以上';
+          if(bot) return ownTerm+' ＋ '+otherTerm+' 合共 '+r.b+' 球或以下';
+          if(r.a===r.b) return ownTerm+' ＋ '+otherTerm+' 合共啱啱 '+r.a+' 球';
+          return ownTerm+' ＋ '+otherTerm+' 合共 '+r.a+'–'+r.b+' 球';
+        });
+    }
+    // ③ 淨係睇另一場球差
+    map=tryAxis((a,b)=>b);
+    if(map && Object.keys(map).length>1){
+      const oPre=resultWinnerText(oi,combo[oi]);
+      return '<div class="scoreHint">規律：淨係睇 <b>'+otherTerm+'</b> 幾多球（同 '+ownTerm+' 無關）。</div>'
+        +emit(keyRuns(map),(r,top,bot)=>{
+          if(top) return oPre+' '+r.a+' 球或以上';
+          if(r.a===r.b) return oPre+' '+r.a+' 球';
+          return oPre+' '+r.a+'–'+r.b+' 球';
+        });
+    }
+    // ④ 淨係睇己方球差
+    map=tryAxis((a,b)=>a);
+    if(map && Object.keys(map).length>1){
+      return '<div class="scoreHint">規律：淨係睇 <b>'+ownTerm+'</b> 幾多球。</div>'
+        +emit(keyRuns(map),(r,top,bot)=>{
+          if(top) return ownTerm+' '+r.a+' 球或以上';
+          if(r.a===r.b) return ownTerm+' '+r.a+' 球';
+          return ownTerm+' '+r.a+'–'+r.b+' 球';
+        });
+    }
+    // ⑤ 偵測唔到規律 → 退返逐行（少見）
     const otherPrefix=resultWinnerText(oi,combo[oi]);
     let h='<ul class="ruleList">';
     for(let om=1;om<=ownMax;om++){
-      const items=[];
-      for(let xm=1;xm<=otherMax;xm++){
-        const cons={}; cons[mi]={kind:'margin',v:om}; cons[oi]={kind:'margin',v:xm};
-        const ev=evalCombo(c,combo,cons), key=posKey(ev), txt=rankText(ev);
-        items.push({m:xm,key,txt});
-      }
+      const items=[]; for(let xm=1;xm<=otherMax;xm++){ items.push({m:xm,key:clsOfText(grid[om][xm]),txt:grid[om][xm]}); }
       const runs=runsFrom(items);
-      const parts=runs.map(r=>{
-        const cls=r.key==='safe'?'safe':(r.key==='risk'?'risk':'mix');
-        const label=(r.b===otherMax)?(otherPrefix+r.a+'球或以上'):(r.a===r.b?otherPrefix+r.a+'球':otherPrefix+r.a+'-'+r.b+'球');
-        return '<span class="'+cls+'">'+label+' → '+r.txt+'</span>';
-      });
+      const parts=runs.map(r=>{ const label=(r.b===otherMax)?(otherPrefix+r.a+'球或以上'):(r.a===r.b?otherPrefix+r.a+'球':otherPrefix+r.a+'-'+r.b+'球');
+        return '<span class="'+r.key+'">'+label+' → '+r.txt+'</span>'; });
       h+='<li><b>'+teamMarginLabel(c,mi,combo[mi],om)+'</b>：'+parts.join('；')+'</li>';
     }
-    h+='</ul>';
-    return h;
+    return h+'</ul>';
   }
   function scoreDetail(c,combo,mi,ev){
     if(ev.exact) return '';
@@ -965,7 +1045,21 @@ function buildScen(g, S){
     const ownRows=[['勝',home?'H':'A'],['和','D'],['負',home?'A':'H']];
     h+='<div class="teamScen"><div class="teamScenHead"><div><b>'+flag(c)+T[c].zh+'</b>'+(sb&&sb.badge?' <span class="badge '+sb.cls+'">'+sb.badge+'</span>':'')+'</div>'
       +'<div class="meta">最後對 '+T[opp].zh+'｜另一場：'+otherText+'</div></div>';
+    // 先算晒所有 自己勝/和/負 × 另一場 嘅名次，若鎖死同一位就唔開表
+    const lockEv=[]; ownRows.forEach(([_o,oL])=>cols.forEach(co=>lockEv.push(evalCombo(c,Object.assign({},co.set,{[mi]:oL})))));
+    const lockSet=new Set(); lockEv.forEach(ev=>ev.positions.forEach(p=>lockSet.add(p)));
+    if(lockSet.size===1){
+      const p=[...lockSet][0];
+      const read=p<=2?'<span class="badge b-q">小組出線</span>'
+        :p===3?'<span class="badge b-live">第3｜要睇最佳第三</span>'
+        :'<span class="badge b-out">小組出局</span>';
+      const cls=p<=2?'gx':p===3?'gt':'gout';
+      h+='<table class="scTbl"><tr><th class="own">'+T[c].zh+'結果</th><th class="other">另一場結果</th><th class="rank">最終排名</th><th class="read">解讀</th></tr>'
+        +'<tr class="ownStart"><td class="own">任何結果</td><td class="other">任何結果</td><td class="rank '+cls+'">第'+p+'</td><td class="read">'+read+'</td></tr></table></div>';
+      return;
+    }
     h+='<table class="scTbl"><tr><th class="own">'+T[c].zh+'結果</th><th class="other">另一場結果</th><th class="rank">最終排名</th><th class="read">解讀</th></tr>';
+    const groups=[];
     ownRows.forEach(([olab,oL])=>{
       const raw=cols.map(co=>{
         const combo=Object.assign({},co.set,{[mi]:oL});
@@ -983,8 +1077,16 @@ function buildScen(g, S){
           else entries.push(Object.assign({_sig:sig},x));
         });
       }
-      entries.forEach((e,idx)=>{
-        h+='<tr class="'+(idx===0?'ownStart':'')+'"><td class="own">'+ownResultLabel(c,mi,oL)+'</td><td class="other">'+e.label+'</td><td class="rank '+e.cls+'">'+e.rank+'</td><td class="read">'+e.read+'</td></tr>';
+      // 自己結果之間，成行（另一場＋名次＋解讀）一樣就併埋（勝／和）
+      const rowSig=entries.map(e=>e.label+'｜'+e.rank+'｜'+e.read).join('§');
+      const last=groups[groups.length-1];
+      if(last && last.sig===rowSig) last.words.push(olab);
+      else groups.push({words:[olab], entries, sig:rowSig});
+    });
+    groups.forEach(grp=>{
+      const ownCell=T[c].zh+grp.words.join('／');
+      grp.entries.forEach((e,idx)=>{
+        h+='<tr class="'+(idx===0?'ownStart':'')+'"><td class="own">'+ownCell+'</td><td class="other">'+e.label+'</td><td class="rank '+e.cls+'">'+e.rank+'</td><td class="read">'+e.read+'</td></tr>';
       });
     });
     h+='</table></div>';
@@ -998,23 +1100,57 @@ function openScen(g){
 }
 function closeScen(){ document.getElementById('scenModal').style.display='none'; }
 /* 某組「最終第3名」最多可以攞幾多分（窮舉餘下賽果，取第3高分嘅最大值） */
+/* 某組「最終第3名」所有可能成績（精準排第3：分數 → 得失球 → 入球） */
+const BEST3_METRIC_CACHE = {};
+function best3MetricCacheKey(g){
+  const arr=[]; for(let i=0;i<6;i++){ const r=getR(g,i); arr.push(r.h+':'+r.a); }
+  return g+'|'+arr.join('|');
+}
+function possibleFinalThirdMetrics(g){
+  const key=best3MetricCacheKey(g);
+  if(BEST3_METRIC_CACHE[key]) return BEST3_METRIC_CACHE[key];
+  const codes=GROUPS[g], rem=[];
+  for(let i=0;i<6;i++){ const r=getR(g,i); if(r.h===''||r.a==='') rem.push(i); }
+  function makeMatches(scoreMap){ const ms=[];
+    for(let i=0;i<6;i++){ const H=codes[FIX[i][0]], A=codes[FIX[i][1]], r=getR(g,i);
+      if(r.h!==''&&r.a!=='') ms.push({h:H,a:A,hg:+r.h,ag:+r.a});
+      else if(scoreMap[i]) ms.push({h:H,a:A,hg:scoreMap[i][0],ag:scoreMap[i][1]}); }
+    return ms; }
+  const out=[], seen={};
+  function add(scoreMap){ const rkf=rankFrom(codes,makeMatches(scoreMap));
+    const c=rkf.order[2], s=rkf.st[c]; const k=c+'|'+s.Pts+'|'+s.GD+'|'+s.GF;
+    if(!seen[k]){ seen[k]=1; out.push({code:c,Pts:s.Pts,GD:s.GD,GF:s.GF}); } }
+  if(rem.length===0){ add({}); BEST3_METRIC_CACHE[key]=out; return out; }
+  // 尾段每組通常最多剩 2 場：用 0-12 球逐個實際比分窮舉，足夠判斷鎖定。
+  if(rem.length>2){ BEST3_METRIC_CACHE[key]=[{code:'?',Pts:99,GD:99,GF:99}]; return BEST3_METRIC_CACHE[key]; }
+  const MAX_GOAL=12;
+  (function rec(idx,acc){ if(idx===rem.length){ add(acc); return; }
+    const mi=rem[idx];
+    for(let h=0;h<=MAX_GOAL;h++) for(let a=0;a<=MAX_GOAL;a++){ acc[mi]=[h,a]; rec(idx+1,acc); }
+    delete acc[mi]; })(0,{});
+  BEST3_METRIC_CACHE[key]=out; return out;
+}
 function eventual3rdMaxPts(g){
-  const codes=GROUPS[g], rem=[], base={}; codes.forEach(c=>base[c]=0);
-  for(let i=0;i<6;i++){ const r=getR(g,i), H=codes[FIX[i][0]], A=codes[FIX[i][1]];
-    if(r.h!==""&&r.a!==""){ if(+r.h>+r.a)base[H]+=3; else if(+r.h<+r.a)base[A]+=3; else {base[H]++;base[A]++;} }
-    else rem.push(i); }
-  const n=rem.length, total=Math.pow(3,n); let mx=0;
-  for(let mask=0;mask<total;mask++){ const p=Object.assign({},base); let t=mask;
-    for(let k=0;k<n;k++){ const o=t%3; t=(t/3|0); const idx=rem[k], H=codes[FIX[idx][0]], A=codes[FIX[idx][1]];
-      if(o===0)p[H]+=3; else if(o===1)p[A]+=3; else {p[H]++;p[A]++;} }
-    const arr=codes.map(c=>p[c]).sort((a,b)=>b-a); if(arr[2]>mx)mx=arr[2]; }
-  return mx;
+  return Math.max.apply(null, possibleFinalThirdMetrics(g).map(x=>x.Pts));
+}
+function eventual3rdCanOvertake(g,target){
+  return possibleFinalThirdMetrics(g).some(x=>cmp3b(x,target)>0);
+}
+function bestThirdLockInfo(d){
+  // 12 個第3 出 8 個：最少要 4 個其他組嘅最終第3名無論點踢都追唔到你（比足 分數→得失球→入球），先算數學鎖定。
+  const allDone = thirdData().every(x=>x.done);
+  if(allDone) return {locked:true,cannot:11,need:0,maybe:[]};
+  if(!d.done) return {locked:false,cannot:0,need:4,maybe:Object.keys(GROUPS).filter(g2=>g2!==d.g)};
+  const target={Pts:d.Pts,GD:d.GD,GF:d.GF};
+  let cannot=0, maybe=[];
+  Object.keys(GROUPS).forEach(g2=>{ if(g2===d.g) return;
+    if(!eventual3rdCanOvertake(g2,target)) cannot++; else maybe.push(g2); });
+  return {locked:cannot>=4,cannot,need:Math.max(0,4-cannot),maybe};
 }
 function renderGroups(){
   const wrap=document.getElementById("groups"); let h=""; SCEN={};
   const thirdsNow = thirdData();
   const top8third = thirdsNow.slice(0,8).map(d=>d.code);
-  const cap3={}; Object.keys(GROUPS).forEach(g=>cap3[g]=eventual3rdMaxPts(g));  // 每組最終第3名分數上限
   Object.keys(GROUPS).forEach(g=>{
     const {order,st,played}=rankGroup(g);
     const S=groupScenario(g);
@@ -1027,9 +1163,9 @@ function renderGroups(){
       let mk;
       if(i===0||i===1) mk=' <b class="t3y">✓</b>';
       else if(i===2){
-        const lock = (played===6) && Object.keys(GROUPS).filter(g2=>g2!==g && cap3[g2] < s.Pts).length >= 4;
-        mk = lock ? ' <b class="t3y" title="其餘已有≥4組第3名追唔到你呢個分數，數學上鎖定">🔒鎖定</b>'
-                  : (top8third.indexOf(c)>=0 ? ' <b class="t3y">✓3名(暫)</b>' : ' <b class="t3n">✗</b>');
+        const li=bestThirdLockInfo({g,code:c,P:s.P,Pts:s.Pts,GD:s.GD,GF:s.GF,done:played===6});
+        mk = li.locked ? ' <b class="t3y" title="已有 '+li.cannot+' 組第3名肯定追唔到你（比足分數→得失球→入球），數學上鎖定出線">✓</b>'
+                  : (top8third.indexOf(c)>=0 ? ' <b class="t3y" title="暫列最佳第3，但未數學鎖定，仲差 '+li.need+' 組先肯定">?</b>' : ' <b class="t3n">✗</b>');
       } else mk='';
       h+='<tr class="'+pc+'"><td class="cpos">'+(i+1)+'</td>'
         +'<td class="tn">'+tcell(c)+mk+'</td><td>'+s.P+'</td><td>'+s.W+'</td><td>'+s.D+'</td><td>'+s.L+'</td>'
@@ -1081,21 +1217,31 @@ function thirdData(){
 }
 function renderThird(){
   const arr=thirdData(); const tbl=document.getElementById("thirdTbl");
+  const allDone=arr.every(d=>d.done);
   const cut = arr.length>7 ? arr[7].Pts : null;
   const firstOut = arr.length>8 ? arr[8].Pts : null;
   let h='<tr><th>名</th><th class="l">球隊</th><th>組</th><th>賽</th><th>分</th><th>得失</th><th>入球</th><th>距分界</th><th>結果</th></tr>';
   arr.forEach((d,i)=>{
-    const inq=i<8; const cls=inq?"in":"cut";
+    const inq=i<8; const li=bestThirdLockInfo(d); const locked=inq&&(allDone||li.locked);
+    const cls=(inq?"in":"cut")+(locked?" locked":"");
     let gap='—';
     if(inq && firstOut!==null){ const m=d.Pts-firstOut;
-      gap = m>0? '<span style="color:var(--acc)">領先 '+m+' 分</span>' : '<span style="color:var(--gold)">同分・得失球險過</span>'; }
+      gap = m>0? '<span style="color:var(--acc)">領先 '+m+' 分</span>' : '<span style="color:var(--gold)">同分・睇得失球/入球</span>'; }
     else if(!inq && cut!==null){ const m=cut-d.Pts;
       gap = m>0? '<span style="color:var(--red)">爭差 '+m+' 分</span>' : '<span style="color:var(--gold)">同分・得失球差過</span>'; }
+    let res;
+    if(inq){
+      res = (allDone||li.locked)
+        ? '<span class="badge b-q" title="數學上已鎖定最佳第三出線">🔒鎖定出線</span>'
+        : '<span class="badge b-live" title="暫列前8；目前有 '+li.cannot+' 組第3肯定追唔到佢，仲差 '+li.need+' 組先鎖定">暫列出線</span>';
+    } else {
+      res = allDone? '<span class="badge b-out">淘汰</span>' : '<span class="badge b-out">暫列淘汰</span>';
+    }
     h+='<tr class="'+cls+'"><td>'+(i+1)+'</td><td class="l">'+tcell(d.code)+'</td><td>'+d.g+'</td>'
       +'<td>'+d.P+'</td><td class="pts">'+d.Pts+'</td><td>'+(d.GD>0?'+':'')+d.GD+'</td><td>'+d.GF+'</td>'
       +'<td>'+gap+'</td>'
-      +'<td>'+(inq?'<span class="badge b-q">出線</span>':'<span class="badge b-out">淘汰</span>')+'</td></tr>';
-    if(i===7) h+='<tr class="cutline"><td colspan="9"><div><span>出線分界 '+(cut!==null?'（≥ '+cut+' 分）':'（前 8）')+'</span></div></td></tr>';
+      +'<td>'+res+'</td></tr>';
+    if(i===7) h+='<tr class="cutline"><td colspan="9"><div><span>出線分界 '+(cut!==null?'（暫時 ≥ '+cut+' 分）':'（前 8）')+'</span></div></td></tr>';
   });
   tbl.innerHTML=h;
 }
@@ -1109,7 +1255,10 @@ function renderOverview(){
       let tag="",col="var(--mut)";
       if(i===0){tag="1st";col="var(--acc)";}
       else if(i===1){tag="2nd";col="var(--blue)";}
-      else if(i===2){ if(top8.includes(c)){tag="3rd ✓";col="var(--gold)";} else {tag="3rd";} }
+      else if(i===2){ if(top8.includes(c)){
+        const s3=st[c], li=bestThirdLockInfo({g,code:c,P:s3.P,Pts:s3.Pts,GD:s3.GD,GF:s3.GF,done:s3.P===3});
+        tag=li.locked?"3rd 🔒":"3rd 暫";col="var(--gold)";
+      } else {tag="3rd";} }
       else tag="—";
       h+='<div class="ovrow"><span>'+tcell(c)+'</span><span class="r" style="color:'+col+'">'+tag+'</span></div>';
     });
