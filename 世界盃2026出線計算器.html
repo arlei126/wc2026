@@ -1054,7 +1054,6 @@ function buildScen(g, S){
     return e.rank+'|'+e.read.replace(/<[^>]+>/g,'');
   }
   let h='<div class="scenhelp">已改成：先用勝和負篩走無關情境；如果某個結果已經無視另一場，就會合併做「任何結果」。凡係會受比分影響，會直接展開「輸/贏幾多球 → 最終第幾」，唔再停喺「第1~2 要靠比分」呢啲廢話。</div>';
-
   order.forEach(c=>{
     const sb=S.status[c], mi=nextMatch(c);
     if(mi<0){
@@ -1164,16 +1163,20 @@ function eventual3rdMaxPts(g){
 function eventual3rdCanOvertake(g,target){
   return possibleFinalThirdMetrics(g).some(x=>cmp3b(x,target)>0);
 }
+function eventual3rdMustOvertake(g,target){   // 嗰組第3名「無論點踢」都一定爬過 target
+  return possibleFinalThirdMetrics(g).every(x=>cmp3b(x,target)>0);
+}
 function bestThirdLockInfo(d){
-  // 12 個第3 出 8 個：最少要 4 個其他組嘅最終第3名無論點踢都追唔到你（比足 分數→得失球→入球），先算數學鎖定。
+  // 12 個第3 出 8 個：≥4 組第3名追唔到你 → 鎖定出線；≥8 組第3名一定爬過你 → 鎖定淘汰。
   const allDone = thirdData().every(x=>x.done);
-  if(allDone) return {locked:true,cannot:11,need:0,maybe:[]};
-  if(!d.done) return {locked:false,cannot:0,need:4,maybe:Object.keys(GROUPS).filter(g2=>g2!==d.g)};
+  if(allDone) return {locked:true,eliminated:false,cannot:11,mustBeat:0,need:0,maybe:[]};
+  if(!d.done) return {locked:false,eliminated:false,cannot:0,mustBeat:0,need:4,maybe:Object.keys(GROUPS).filter(g2=>g2!==d.g)};
   const target={Pts:d.Pts,GD:d.GD,GF:d.GF};
-  let cannot=0, maybe=[];
+  let cannot=0, mustBeat=0, maybe=[];
   Object.keys(GROUPS).forEach(g2=>{ if(g2===d.g) return;
-    if(!eventual3rdCanOvertake(g2,target)) cannot++; else maybe.push(g2); });
-  return {locked:cannot>=4,cannot,need:Math.max(0,4-cannot),maybe};
+    if(!eventual3rdCanOvertake(g2,target)) cannot++; else maybe.push(g2);
+    if(eventual3rdMustOvertake(g2,target)) mustBeat++; });
+  return {locked:cannot>=4, eliminated:mustBeat>=8, cannot, mustBeat, need:Math.max(0,4-cannot), maybe};
 }
 function renderGroups(){
   const wrap=document.getElementById("groups"); let h=""; SCEN={};
@@ -1193,6 +1196,7 @@ function renderGroups(){
       else if(i===2){
         const li=bestThirdLockInfo({g,code:c,P:s.P,Pts:s.Pts,GD:s.GD,GF:s.GF,done:played===6});
         mk = li.locked ? ' <b class="t3y" title="已有 '+li.cannot+' 組第3名肯定追唔到你（比足分數→得失球→入球），數學上鎖定出線">✓</b>'
+                  : li.eliminated ? ' <b class="t3n" title="已有 '+li.mustBeat+' 組第3名肯定爬過你，數學上鎖定淘汰">✗</b>'
                   : (top8third.indexOf(c)>=0 ? ' <b class="t3y" title="暫列最佳第3，但未數學鎖定，仲差 '+li.need+' 組先肯定">?</b>' : ' <b class="t3n">✗</b>');
       } else mk='';
       h+='<tr class="'+pc+'"><td class="cpos">'+(i+1)+'</td>'
@@ -1263,7 +1267,9 @@ function renderThird(){
         ? '<span class="badge b-q" title="數學上已鎖定最佳第三出線">🔒鎖定出線</span>'
         : '<span class="badge b-live" title="暫列前8；目前有 '+li.cannot+' 組第3肯定追唔到佢，仲差 '+li.need+' 組先鎖定">暫列出線</span>';
     } else {
-      res = allDone? '<span class="badge b-out">淘汰</span>' : '<span class="badge b-out">暫列淘汰</span>';
+      res = (allDone||li.eliminated)
+        ? '<span class="badge b-out" title="數學上已經肯定爭唔到最佳第三">淘汰</span>'
+        : '<span class="badge b-out">暫列淘汰</span>';
     }
     h+='<tr class="'+cls+'"><td>'+(i+1)+'</td><td class="l">'+tcell(d.code)+'</td><td>'+d.g+'</td>'
       +'<td>'+d.P+'</td><td class="pts">'+d.Pts+'</td><td>'+(d.GD>0?'+':'')+d.GD+'</td><td>'+d.GF+'</td>'
@@ -1412,7 +1418,7 @@ document.getElementById("import").addEventListener("click",()=>{
   if(Object.keys(R).length>0 && !confirm("由 GitHub 攞最新 data.json，會覆蓋你目前喺呢部機嘅賽果。確定？")) return;
   ghStatus('⬆ 由 GitHub 攞緊…');
   fetchRemote().then(d=>{
-    if(!d||!d.R){ alert("攞唔到 GitHub 個 data.json。\\n檢查：① repo arlei126/wc2026 係咪 public　② data.json 喺咪根目錄　③ branch 係 main 定 master　④ 已 push 上去。"); ghStatus('⬆ 匯入失敗'); return; }
+    if(!d||!d.R){ alert("攞唔到 GitHub 個 data.json。\n檢查：① repo arlei126/wc2026 係咪 public　② data.json 喺咪根目錄　③ branch 係 main 定 master　④ 已 push 上去。"); ghStatus('⬆ 匯入失敗'); return; }
     applyRemote(d); SIMP=null; render(); ghStatus('⬆ 已由 GitHub 匯入'+ghTime(d)); alert("匯入完成！");
   }).catch(()=>{ alert("匯入失敗（網絡或 CORS）。"); ghStatus('⬆ 匯入失敗'); });
 });
